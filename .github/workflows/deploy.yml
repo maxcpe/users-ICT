@@ -52,7 +52,7 @@ jobs:
           $hash = (Get-FileHash package-lock.json -Algorithm SHA256).Hash
           $stamp = 'node_modules\.package-lock.sha256'
           if ((Test-Path $stamp) -and ((Get-Content $stamp -Raw).Trim() -eq $hash)) {
-            Write-Host "package-lock.json ไม่เปลี่ยน ข้าม npm ci"
+            Write-Host "package-lock.json unchanged - skip npm ci"
             npx prisma generate
           } else {
             npm ci --no-audit --no-fund --prefer-offline
