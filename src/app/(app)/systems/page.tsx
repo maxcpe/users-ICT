@@ -159,7 +159,7 @@ export default async function SystemsPage({ searchParams }: { searchParams: Prom
               <li key={s.key}>
                 <Link
                   href={`/systems/${s.key}`}
-                  className="glass grid h-full gap-3 p-[18px] text-inherit no-underline transition-colors hover:border-[#ff2bd666] hover:bg-[var(--glass-2)]"
+                  className="glass grid h-full gap-3 p-[18px] text-inherit no-underline transition-colors hover:border-[color-mix(in_srgb,var(--pink)_40%,transparent)] hover:bg-[var(--glass-2)]"
                   style={s.active ? undefined : { opacity: 0.6 }}
                 >
                   <div className="flex items-center gap-3">
@@ -177,11 +177,11 @@ export default async function SystemsPage({ searchParams }: { searchParams: Prom
                   </div>
 
                   <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl" style={{ background: "var(--line-2)" }}>
-                    <div className="px-3 py-2" style={{ background: "#0f0a20" }}>
+                    <div className="px-3 py-2" style={{ background: "var(--surface)" }}>
                       <b className="block text-xl font-semibold tabular-nums">{holderCount.toLocaleString("th-TH")}</b>
                       <span className="text-xs text-faint">คนมีสิทธิ์</span>
                     </div>
-                    <div className="px-3 py-2" style={{ background: "#0f0a20" }}>
+                    <div className="px-3 py-2" style={{ background: "var(--surface)" }}>
                       <b className="block text-xl font-semibold tabular-nums">{mine.length}</b>
                       <span className="text-xs text-faint">ผู้ดูแลที่ตั้งสิทธิ์ได้</span>
                     </div>

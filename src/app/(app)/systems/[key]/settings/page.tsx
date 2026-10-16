@@ -34,7 +34,7 @@ export default async function SystemSettings({
     <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-3.5">
       <SettingsForm system={system} locked={locked} />
       {!locked && (
-        <section className="glass pad content-start" style={{ borderColor: "#ff4d6d55" }} aria-labelledby="danger">
+        <section className="glass pad content-start" style={{ borderColor: "color-mix(in srgb, var(--bad) 33%, transparent)" }} aria-labelledby="danger">
           <h2 id="danger" className="h2 !text-bad-ink">ล้างสิทธิ์ทั้งระบบ</h2>
           <p className="small mb-3 mt-0">ตั้งทุกคนเป็น &quot;ไม่มีสิทธิ์&quot; และถอนผู้ดูแลทั้งหมด ใช้เมื่อปิดระบบถาวร ค่าเดิมของทุกคนถูกเก็บในบันทึกการใช้งาน</p>
           <ClearSystemButton

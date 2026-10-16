@@ -123,7 +123,7 @@ export function AuditList({
         const system = e.systemKey ? systems.get(e.systemKey) : undefined;
         const who = (id: number | null) => (id === null ? null : (names.get(id) ?? `U_id ${id}`));
         return (
-          <li key={String(e.id)} className="grid gap-x-4 gap-y-1 border-[#ffffff14] px-4 py-3.5 min-[821px]:grid-cols-[110px_1fr] [&+&]:border-t">
+          <li key={String(e.id)} className="grid gap-x-4 gap-y-1 border-[var(--line-2)] px-4 py-3.5 min-[821px]:grid-cols-[110px_1fr] [&+&]:border-t">
             <time dateTime={e.at.toISOString()} className="small">
               {dateFmt.format(e.at)}
               <br className="max-[820px]:hidden" /> {timeFmt.format(e.at)}

@@ -33,7 +33,7 @@ export default async function SystemLayout({ children, params }: { children: Rea
       </Link>
       <div className="flex flex-wrap items-center gap-4">
         <div
-          className="grid h-16 w-16 flex-none place-items-center rounded-[20px] border border-[#ffffff26] text-[32px]"
+          className="grid h-16 w-16 flex-none place-items-center rounded-[20px] border border-[var(--field-line)] text-[32px]"
           style={{ background: "linear-gradient(135deg,#00e1ff33,#ff2bd633)" }}
           aria-hidden="true"
         >

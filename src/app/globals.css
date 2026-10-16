@@ -63,6 +63,10 @@ a { color: var(--cyan-ink); }
 button, input, select, textarea { font: inherit; color: inherit; }
 button, [role="button"], a { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+/* ส่วนที่เบราว์เซอร์วาดเอง ให้เข้าธีม: แถบเลือกข้อความ เคอร์เซอร์ แถบเลื่อน ตัวเลขในตาราง */
+::selection { background: color-mix(in srgb, var(--pink) 35%, transparent); color: #fff; }
+input, textarea { caret-color: var(--cyan); }
+html { scrollbar-color: var(--line) var(--bg); }
 
 /* แสงฟุ้งพื้นหลัง (design.md 4) — ไม่เคลื่อนไหว */
 .glow-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
@@ -136,7 +140,7 @@ select.input option { background: var(--option-bg); }
 /* ตาราง (5.8) */
 .table-wrap { padding: 4px; overflow-x: auto; }
 .table { width: 100%; border-collapse: separate; border-spacing: 0; }
-.table th, .table td { text-align: left; padding: 12px 14px; vertical-align: middle; }
+.table th, .table td { text-align: left; padding: 12px 14px; vertical-align: middle; font-variant-numeric: tabular-nums; }
 .table th { font-size: 13px; color: var(--faint); font-weight: 500; white-space: nowrap; }
 .table tbody td { border-top: 1px solid var(--line-2); }
 .table tbody tr:hover td { background: #ffffff08; }

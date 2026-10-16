@@ -75,7 +75,7 @@ export function PersonRoleEditor({ userId, personName, systems }: { userId: numb
           return (
             <li
               key={s.key}
-              className="flex flex-wrap items-center gap-3.5 px-4 py-3.5 [&+&]:border-t [&+&]:border-[#ffffff14]"
+              className="flex flex-wrap items-center gap-3.5 px-4 py-3.5 [&+&]:border-t [&+&]:border-[var(--line-2)]"
               style={pending.has(s.key) ? { background: "color-mix(in srgb, var(--warn) 6%, transparent)" } : undefined}
             >
               <span className="grid h-10 w-10 flex-none place-items-center rounded-xl text-xl" style={{ background: "var(--glass-2)" }} aria-hidden="true">

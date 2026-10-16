@@ -37,7 +37,7 @@ export function SensitivePanel({
         </div>
       )}
       {rows.map(({ f, label, hint }) => (
-        <div key={f} className="flex flex-wrap items-center gap-3 border-[#ffffff14] p-4 [&+&]:border-t">
+        <div key={f} className="flex flex-wrap items-center gap-3 border-[var(--line-2)] p-4 [&+&]:border-t">
           <div className="min-w-[200px] flex-1">
             <b>{label}</b>
             {hint && <div className="small">{hint}</div>}
