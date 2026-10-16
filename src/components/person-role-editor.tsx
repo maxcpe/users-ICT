@@ -76,7 +76,7 @@ export function PersonRoleEditor({ userId, personName, systems }: { userId: numb
             <li
               key={s.key}
               className="flex flex-wrap items-center gap-3.5 px-4 py-3.5 [&+&]:border-t [&+&]:border-[#ffffff14]"
-              style={pending.has(s.key) ? { background: "#ffd23d10" } : undefined}
+              style={pending.has(s.key) ? { background: "color-mix(in srgb, var(--warn) 6%, transparent)" } : undefined}
             >
               <span className="grid h-10 w-10 flex-none place-items-center rounded-xl text-xl" style={{ background: "var(--glass-2)" }} aria-hidden="true">
                 {s.icon ?? "📦"}
@@ -94,6 +94,8 @@ export function PersonRoleEditor({ userId, personName, systems }: { userId: numb
                   <span className="small">{s.locked}</span>
                 </span>
               ) : (
+                // มือถือ: ตัวเลือกเต็มกว้างใต้ชื่อระบบ · คอมพิวเตอร์: อยู่ขวาของชื่อ (design.md 5.13)
+                <div className="w-full min-[821px]:w-auto min-[821px]:min-w-[240px]">
                 <LevelSelect
                   levels={s.levels}
                   original={s.current}
@@ -108,6 +110,7 @@ export function PersonRoleEditor({ userId, personName, systems }: { userId: numb
                     })
                   }
                 />
+                </div>
               )}
             </li>
           );
