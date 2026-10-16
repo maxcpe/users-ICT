@@ -43,7 +43,7 @@ export function PeopleFilters({ branches, jobs, systems }: { branches: string[];
 
   const select = (id: string, label: string, value: string, options: readonly (readonly [string, string])[], onChange: (v: string) => void, disabled = false) => (
     <div className="grid min-w-[150px] flex-1 gap-1">
-      <label htmlFor={id} className="small">{label}</label>
+      <label htmlFor={id} className="label">{label}</label>
       <select id={id} className="input" value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)}>
         {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select>

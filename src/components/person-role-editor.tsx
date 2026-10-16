@@ -59,7 +59,7 @@ export function PersonRoleEditor({ userId, personName, systems }: { userId: numb
       {systems.length > FILTER_FROM && (
         <div className="mb-2.5 flex flex-wrap items-end gap-2.5">
           <div className="grid min-w-[220px] flex-1 gap-1">
-            <label htmlFor="role-q" className="small">ค้นหาระบบ</label>
+            <label htmlFor="role-q" className="label">ค้นหาระบบ</label>
             <input id="role-q" className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="ชื่อระบบ…" />
           </div>
           <button type="button" className="pill" aria-pressed={onlyHeld} onClick={() => setOnlyHeld((v) => !v)}>

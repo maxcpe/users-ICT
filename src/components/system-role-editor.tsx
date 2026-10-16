@@ -166,20 +166,20 @@ export function SystemRoleEditor({
 
           <div className="mt-2 flex flex-wrap items-end gap-2.5">
             <div className="grid min-w-[150px] flex-1 gap-1">
-              <label htmlFor="add-line" className="small">สาย</label>
+              <label htmlFor="add-line" className="label">สาย</label>
               <select id="add-line" className="input" value={fLine} onChange={(e) => setFLine(e.target.value as Line)}>
                 {LINES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </div>
             <div className="grid min-w-[180px] flex-[2_1_180px] gap-1">
-              <label htmlFor="add-branch" className="small">สังกัด</label>
+              <label htmlFor="add-branch" className="label">สังกัด</label>
               <select id="add-branch" className="input" value={fBranch} onChange={(e) => setFBranch(e.target.value)}>
                 <option value="">ทุกสังกัด</option>
                 {branches.map((b) => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
             <div className="grid min-w-[180px] flex-[2_1_180px] gap-1">
-              <label htmlFor="add-job" className="small">งาน</label>
+              <label htmlFor="add-job" className="label">งาน</label>
               <select id="add-job" className="input" value={fJob} onChange={(e) => setFJob(e.target.value)}>
                 <option value="">ทุกงาน</option>
                 {jobs.map((j) => <option key={j} value={j}>{j}</option>)}
@@ -259,7 +259,7 @@ export function SystemRoleEditor({
               </span>
               <span className="flex gap-2">
                 <button type="button" className="btn btn-sm" onClick={() => setPending(new Map())}>ยกเลิกการเปลี่ยน</button>
-                <button type="button" className="btn btn-sm btn-primary" onClick={() => { setError(null); setConfirm(true); }}>บันทึกตอนนี้</button>
+                <button type="button" className="btn btn-sm" onClick={() => { setError(null); setConfirm(true); }}>บันทึกตอนนี้</button>
               </span>
             </div>
           )}

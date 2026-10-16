@@ -87,7 +87,7 @@ export default async function SystemsPage({ searchParams }: { searchParams: Prom
         {show !== "all" && <input type="hidden" name="show" value={show} />}
         {view === "list" && <input type="hidden" name="view" value="list" />}
         <div className="grid min-w-[220px] flex-1 gap-1">
-          <label htmlFor="sys-q" className="small">ค้นหาระบบ</label>
+          <label htmlFor="sys-q" className="label">ค้นหาระบบ</label>
           <input id="sys-q" name="q" className="input" defaultValue={q} placeholder="ชื่อ คีย์ หรือที่อยู่เว็บ…" />
         </div>
         <button type="submit" className="btn">ค้นหา</button>

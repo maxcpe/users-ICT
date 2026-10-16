@@ -110,11 +110,11 @@ export default async function SystemPeople({ params, searchParams }: { params: P
       <form role="search" method="get" className="mb-2.5 flex flex-wrap items-end gap-2.5">
         {levelParam !== "all" && <input type="hidden" name="level" value={levelParam} />}
         <div className="grid min-w-[220px] flex-[2_1_220px] gap-1">
-          <label htmlFor="t-q" className="small">ค้นหาในรายชื่อ</label>
+          <label htmlFor="t-q" className="label">ค้นหาในรายชื่อ</label>
           <input id="t-q" name="q" className="input" defaultValue={q} placeholder="ชื่อหรืออีเมล…" />
         </div>
         <div className="grid min-w-[180px] flex-1 gap-1">
-          <label htmlFor="t-branch" className="small">สังกัด</label>
+          <label htmlFor="t-branch" className="label">สังกัด</label>
           <select id="t-branch" name="branch" className="input" defaultValue={branch}>
             <option value="">ทุกสังกัด</option>
             {branches.map((b) => <option key={b} value={b}>{b}</option>)}
