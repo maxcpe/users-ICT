@@ -46,9 +46,6 @@ export default async function SystemLayout({ children, params }: { children: Rea
           </h1>
           <div className="chips mt-1.5">
             {system.active ? <span className="chip chip-ok">● ใช้งาน</span> : <span className="chip chip-off">💤 ซ่อนจากหน้าจอ</span>}
-            <span className={`chip ${system.storage === "table" ? "chip-violet" : "chip-cyan"}`}>
-              {system.storage === "table" ? "user_roles" : system.columnName}
-            </span>
             {system.unconfirmed && <span className="chip chip-warn">⚠ ระดับยังไม่ยืนยัน</span>}
             {system.url && (
               <a href={system.url} target="_blank" rel="noopener noreferrer" className="small !text-cyan-ink">
