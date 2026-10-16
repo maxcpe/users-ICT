@@ -86,3 +86,15 @@ export function levelChangeMessage(e: LevelChangeError): string {
       return `ระดับ ${e.value} มีคนใช้อยู่ ${e.count} คน ลบหรือเปลี่ยนค่าไม่ได้ ต้องย้ายคนไประดับอื่นก่อน`;
   }
 }
+
+/** ข้อความของชุดบทบาท (ระบบหลายสิทธิ์, spec 2.3) เช่น "ผู้ใช้งาน, ฝ่ายบุคคล" — ว่าง = "ไม่มีสิทธิ์" */
+export function levelSetText(levels: Level[], values: readonly number[]): string {
+  if (!values.length) return "ไม่มีสิทธิ์";
+  return [...values]
+    .sort((a, b) => a - b)
+    .map((v) => {
+      const d = describeLevel(levels, v);
+      return d.kind === "known" ? d.label : `ค่าอื่น (${v})`;
+    })
+    .join(", ");
+}

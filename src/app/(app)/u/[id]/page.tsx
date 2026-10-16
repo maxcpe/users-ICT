@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PersonRoleEditor, type PersonSystemRow } from "@/components/person-role-editor";
 import { dbNames } from "@/lib/env";
 import { loadPerson } from "@/lib/person";
-import { getRolesOf } from "@/lib/registry";
+import { getRoleSetsOf } from "@/lib/registry";
 import { canSetRole, canViewSystem } from "@/lib/roles";
 import { listSystems } from "@/lib/system-repo";
 import { USERS_SYSTEM_KEY } from "@/lib/systems";
@@ -20,7 +20,7 @@ export default async function PersonRoles({
   const { created } = await searchParams;
   const { actor, person, status } = await loadPerson(id);
   const systems = (await listSystems()).filter((s) => s.key !== USERS_SYSTEM_KEY && canViewSystem(actor, s.key));
-  const roles = await getRolesOf(person.id, systems);
+  const roles = await getRoleSetsOf(person.id, systems);
   const inactive = status?.status === "inactive";
 
   const rows: PersonSystemRow[] = systems.map((s) => ({
@@ -30,7 +30,9 @@ export default async function PersonRoles({
     note: s.note,
     levels: s.levels,
     unconfirmed: s.unconfirmed,
-    current: roles[s.key] ?? null,
+    current: roles[s.key]?.[0] ?? null,
+    multi: s.multi,
+    currentLevels: roles[s.key] ?? [],
     locked: dbNames().userDbReadOnly && s.storage === "column"
       ? "โหมดอ่านข้อมูลจริง"
       : inactive

@@ -20,6 +20,7 @@ const ACTION_TEXT: Record<string, { label: string; chip: string }> = {
   "system.confirm": { label: "ยืนยันระดับ", chip: "chip-ok" },
   "system.clear": { label: "ล้างสิทธิ์ทั้งระบบ", chip: "chip-pink" },
   "system.rename": { label: "เปลี่ยน key", chip: "chip-warn" },
+  "system.multi": { label: "หลายสิทธิ์ต่อคน", chip: "chip-warn" },
 };
 
 const FIELD_TEXT: Record<string, string> = {
@@ -49,6 +50,15 @@ const show = (v: unknown) => (v === null || v === undefined || v === "" ? "—" 
 
 function Diff({ entry, system }: { entry: AuditLog; system?: SystemDef }) {
   const c = (entry.changes ?? {}) as Record<string, unknown>;
+  // ระบบหลายสิทธิ์ (spec 2.3): { levels: [[เดิม…], [ใหม่…]] }
+  if (entry.action === "role.set" && Array.isArray(c.levels)) {
+    const set = (v: unknown) => (Array.isArray(v) && v.length ? v.map((x) => levelText(system, x)).join(", ") : "ไม่มีสิทธิ์");
+    return (
+      <div className="small">
+        <s className="text-bad-ink">{set(c.levels[0])}</s> → <span className="text-ok-ink">{set(c.levels[1])}</span>
+      </div>
+    );
+  }
   if (entry.action === "role.set" && Array.isArray(c.level)) {
     return (
       <div className="small">
@@ -93,6 +103,14 @@ function Diff({ entry, system }: { entry: AuditLog; system?: SystemDef }) {
     return (
       <div className="small mono">
         <s className="text-bad-ink">{show(c.key[0])}</s> → <span className="text-ok-ink">{show(c.key[1])}</span>
+      </div>
+    );
+  }
+  if (entry.action === "system.multi") {
+    const n = c.moved && typeof c.moved === "object" ? Object.keys(c.moved).length : 0;
+    return (
+      <div className="small">
+        {c.multi ? `เปิดหลายสิทธิ์ต่อคน${c.fromColumn ? ` · ย้าย ${n} คนจาก ${show(c.fromColumn)} ไปตารางกลาง (ค่าเดิมเก็บไว้ในบันทึกนี้)` : ""}` : "ปิดหลายสิทธิ์ต่อคน"}
       </div>
     );
   }

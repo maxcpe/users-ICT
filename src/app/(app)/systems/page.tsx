@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireActor } from "@/lib/access";
-import { getStaffByIds, levelCountsAll } from "@/lib/registry";
+import { getStaffByIds, holderCounts, levelCountsAll } from "@/lib/registry";
 import { canViewSystem, isCentral } from "@/lib/roles";
 import { listSystemAdmins, listSystems } from "@/lib/system-repo";
 import { USERS_SYSTEM_KEY } from "@/lib/systems";
@@ -23,13 +23,13 @@ export default async function SystemsPage({ searchParams }: { searchParams: Prom
   const view = sp.view === "list" ? "list" : "card";
 
   const systems = (await listSystems({ includeInactive: central })).filter((s) => s.key !== USERS_SYSTEM_KEY && canViewSystem(actor, s.key));
-  const [admins, counts] = await Promise.all([listSystemAdmins(), levelCountsAll(systems)]);
+  const [admins, counts, holders] = await Promise.all([listSystemAdmins(), levelCountsAll(systems), holderCounts(systems)]);
   const people = central ? new Map((await getStaffByIds([...new Set(admins.map((a) => a.userId))])).map((p) => [p.id, p.name ?? ""])) : new Map<number, string>();
 
   const cards = systems.map((s) => {
     const mine = admins.filter((a) => a.systemKey === s.key);
     const byLevel = counts.get(s.key) ?? new Map<number, number>();
-    const holderCount = [...byLevel.values()].reduce((a, b) => a + b, 0);
+    const holderCount = holders.get(s.key) ?? 0; // ไม่นับซ้ำคนที่มีหลายบทบาท
     const other = [...byLevel].filter(([v]) => !s.levels.some((l) => l.value === v)).reduce((a, [, n]) => a + n, 0);
     const warnings = [
       ...(mine.length === 0 ? ["ยังไม่มีผู้ดูแล"] : []),

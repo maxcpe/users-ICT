@@ -21,7 +21,7 @@ export default async function SystemConnect({
   const sql = `SELECT U_id, U_name, level
 FROM \`user\`.\`v_roles\`
 WHERE system_key = '${key}' AND U_email = ?;
--- ไม่ได้แถว = ไม่มีสิทธิ์ · คนที่ปิดใช้งานไม่อยู่ใน view`;
+-- ไม่ได้แถว = ไม่มีสิทธิ์ · คนที่ปิดใช้งานไม่อยู่ใน view${system.multi ? "\n-- หลายสิทธิ์ต่อคน: ได้ 1 แถวต่อบทบาท เช็กว่ามีแถว level = ที่ต้องการไหม" : ""}`;
   const grant = `CREATE USER 'ro_${key}'@'localhost' IDENTIFIED BY '<รหัสผ่าน>';
 GRANT SELECT ON \`user\`.\`v_roles\` TO 'ro_${key}'@'localhost';
 GRANT SELECT ON \`user\`.\`v_staff\` TO 'ro_${key}'@'localhost';`;
@@ -37,9 +37,11 @@ GRANT SELECT ON \`user\`.\`v_staff\` TO 'ro_${key}'@'localhost';`;
       <div className="callout callout-info">
         <span aria-hidden="true">ℹ️</span>
         <span>
-          {system.storage === "column"
-            ? `${system.name}อ่านสิทธิ์จากที่เดิมได้ตามปกติ ไม่ต้องแก้ ถ้าต้องการเปลี่ยนมาอ่าน view ด้านล่างก็ทำได้โดยไม่ต้องย้ายข้อมูล`
-            : "ระบบนี้เก็บสิทธิ์ในตารางกลาง ให้เว็บอ่านผ่าน view ด้านล่าง ห้ามอ่านหรือเขียนตาราง user_roles ตรง"}
+          {system.multi
+            ? `${system.name}เปิดหลายสิทธิ์ต่อคน: แต่ละคนอาจได้หลายแถว (แถวละบทบาท) เว็บต้องเช็ก "มีบทบาทนี้ไหม" ไม่ใช่เทียบระดับเดียว`
+            : system.storage === "column"
+              ? `${system.name}อ่านสิทธิ์จากที่เดิมได้ตามปกติ ไม่ต้องแก้ ถ้าต้องการเปลี่ยนมาอ่าน view ด้านล่างก็ทำได้โดยไม่ต้องย้ายข้อมูล`
+              : "ระบบนี้เก็บสิทธิ์ในตารางกลาง ให้เว็บอ่านผ่าน view ด้านล่าง ห้ามอ่านหรือเขียนตาราง user_roles ตรง"}
         </span>
       </div>
 
@@ -54,6 +56,7 @@ GRANT SELECT ON \`user\`.\`v_staff\` TO 'ro_${key}'@'localhost';`;
             <span className="k">{`'${key}'`}</span>
             {` AND U_email = ?;\n`}
             <span className="c">-- ไม่ได้แถว = ไม่มีสิทธิ์ · คนที่ปิดใช้งานไม่อยู่ใน view</span>
+            {system.multi && <span className="c">{"\n-- หลายสิทธิ์ต่อคน: ได้ 1 แถวต่อบทบาท เช็กว่ามีแถว level = ที่ต้องการไหม"}</span>}
           </code>
         </pre>
         <dl className="kv mt-4">
@@ -64,7 +67,10 @@ GRANT SELECT ON \`user\`.\`v_staff\` TO 'ro_${key}'@'localhost';`;
           <dt>ระดับ</dt>
           <dd>{system.levels.map((l) => `${l.value} ${l.label}`).join(" · ") || "ยังไม่ได้กำหนด"}</dd>
           <dt>คำแนะนำ</dt>
-          <dd>อ่านสิทธิ์ทุก request หรือ cache ไม่เกิน 5 นาที เทียบระดับด้วย &gt;= และอ้างอิงคนด้วย U_id ไม่ใช่อีเมล</dd>
+          <dd>
+            อ่านสิทธิ์ทุก request หรือ cache ไม่เกิน 5 นาที
+            {system.multi ? " เช็กว่ามีแถวของบทบาทที่ต้องการ (ไม่ต้องซ้อนกัน)" : " เทียบระดับด้วย >="} และอ้างอิงคนด้วย U_id ไม่ใช่อีเมล
+          </dd>
         </dl>
       </section>
 

@@ -41,3 +41,42 @@ describe("checkRoleChange", () => {
     expect(checkRoleChange({ ...base, system: { ...checkin, key: "users" }, actor: central, change: { userId: 10, systemKey: "users", value: 99 } })).toMatchObject({ ok: false, reason: "forbidden" });
   });
 });
+
+describe("checkRoleChange — หลายสิทธิ์ต่อคน (spec 2.3)", () => {
+  const evaluation = {
+    key: "evaluation",
+    active: true,
+    multi: true,
+    levels: [{ value: 1, label: "ผู้ใช้งาน" }, { value: 50, label: "สร้างการประเมิน" }, { value: 80, label: "ฝ่ายบุคคล" }],
+  };
+  const m = { system: evaluation, targetExists: true, targetInactive: false, current: null, actor: central };
+  const ch = (levels?: number[]) => ({ userId: 10, systemKey: "evaluation", value: null, levels });
+
+  it("ถือหลายบทบาทที่ลงทะเบียนได้", () => {
+    expect(checkRoleChange({ ...m, currentSet: [1], change: ch([1, 50, 80]) })).toEqual({ ok: true, kind: "change" });
+  });
+
+  it("ชุดเดิม (ลำดับต่างหรือซ้ำ) นับเป็นไม่เปลี่ยน", () => {
+    expect(checkRoleChange({ ...m, currentSet: [50, 1], change: ch([1, 50, 50]) })).toEqual({ ok: true, kind: "same" });
+  });
+
+  it("ถอนทุกบทบาท = ไม่มีสิทธิ์", () => {
+    expect(checkRoleChange({ ...m, currentSet: [1, 50], change: ch([]) })).toEqual({ ok: true, kind: "change" });
+  });
+
+  it("เพิ่มบทบาทที่ไม่ได้ลงทะเบียนไม่ได้ แต่คงค่าอื่นเดิมไว้ได้", () => {
+    expect(checkRoleChange({ ...m, currentSet: [1], change: ch([1, 7]) })).toEqual({ ok: false, reason: "bad_level" });
+    expect(checkRoleChange({ ...m, currentSet: [7], change: ch([7, 50]) })).toEqual({ ok: true, kind: "change" });
+  });
+
+  it("ระบบหลายสิทธิ์ต้องส่งชุดบทบาท และระบบปกติห้ามส่งชุดบทบาท", () => {
+    expect(checkRoleChange({ ...m, currentSet: [], change: { userId: 10, systemKey: "evaluation", value: 50 } })).toEqual({ ok: false, reason: "bad_level" });
+    expect(checkRoleChange({ ...base, actor: central, change: { userId: 10, systemKey: "checkin", value: null, levels: [1, 90] } })).toEqual({ ok: false, reason: "bad_level" });
+  });
+
+  it("กฎเดิมยังใช้: ห้ามตั้งตัวเองและคนที่ปิดใช้งาน", () => {
+    const admin: Actor = { ...checkinAdmin, systems: ["evaluation"] };
+    expect(checkRoleChange({ ...m, actor: admin, currentSet: [], change: { ...ch([1]), userId: 3 } })).toMatchObject({ ok: false, reason: "forbidden" });
+    expect(checkRoleChange({ ...m, targetInactive: true, currentSet: [], change: ch([1]) })).toMatchObject({ ok: false, reason: "deactivated" });
+  });
+});

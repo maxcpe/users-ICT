@@ -3,9 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { saveRoles } from "@/app/(app)/role-actions";
-import { describeLevel, type Level } from "@/lib/systems";
+import { describeLevel, levelSetText, type Level } from "@/lib/systems";
 import { ConfirmDialog, type Impact } from "./confirm-dialog";
 import { LevelChip } from "./level-chip";
+import { LevelMultiSelect, LevelSetChip } from "./level-multi";
 import { LevelSelect } from "./level-select";
 
 export type PersonSystemRow = {
@@ -16,6 +17,9 @@ export type PersonSystemRow = {
   levels: Level[];
   unconfirmed: boolean;
   current: number | null;
+  /** ระบบหลายสิทธิ์ (spec 2.3): ทุกบทบาทปัจจุบัน */
+  multi: boolean;
+  currentLevels: number[];
   /** เหตุผลที่แก้ไม่ได้ */
   locked?: string;
 };
@@ -31,7 +35,8 @@ const FILTER_FROM = 8;
 /** แถวระบบในหน้าสิทธิ์รายคน (design.md 5.13) */
 export function PersonRoleEditor({ userId, personName, systems }: { userId: number; personName: string; systems: PersonSystemRow[] }) {
   const router = useRouter();
-  const [pending, setPending] = useState<Map<string, number | null>>(new Map());
+  // ระบบปกติเก็บค่าเดียว ระบบหลายสิทธิ์เก็บชุดบทบาท
+  const [pending, setPending] = useState<Map<string, number | null | number[]>>(new Map());
   const [confirm, setConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -40,11 +45,17 @@ export function PersonRoleEditor({ userId, personName, systems }: { userId: numb
   const [onlyHeld, setOnlyHeld] = useState(false);
 
   const byKey = new Map(systems.map((s) => [s.key, s]));
-  const changes = [...pending].map(([systemKey, value]) => ({ userId, systemKey, value }));
-  const impacts: Impact[] = changes.map((c) => {
-    const s = byKey.get(c.systemKey)!;
-    return { label: `${s.name}: ${label(s.levels, s.current)} → ${label(s.levels, c.value)}`, value: s.note ?? "", tone: "later" };
+  const changes = [...pending].map(([systemKey, v]) =>
+    Array.isArray(v) ? { userId, systemKey, value: null, levels: v } : { userId, systemKey, value: v },
+  );
+  const impacts: Impact[] = [...pending].map(([key, v]) => {
+    const s = byKey.get(key)!;
+    const text = Array.isArray(v)
+      ? `${levelSetText(s.levels, s.currentLevels)} → ${levelSetText(s.levels, v)}`
+      : `${label(s.levels, s.current)} → ${label(s.levels, v)}`;
+    return { label: `${s.name}: ${text}`, value: s.note ?? "", tone: "later" };
   });
+  const sameSet = (a: number[], b: number[]) => a.length === b.length && [...a].sort((x, y) => x - y).every((v, i) => v === [...b].sort((x, y) => x - y)[i]);
 
   const held = systems.filter((s) => s.current !== null).length;
   const needle = q.trim().toLowerCase();
@@ -71,7 +82,8 @@ export function PersonRoleEditor({ userId, personName, systems }: { userId: numb
       <ul className="glass m-0 list-none p-0">
         {visible.length === 0 && <li className="small px-4 py-6 text-center">ไม่พบระบบที่ตรงกับตัวกรอง</li>}
         {visible.map((s) => {
-          const value = pending.has(s.key) ? pending.get(s.key)! : s.current;
+          const value = pending.has(s.key) ? (pending.get(s.key) as number | null) : s.current;
+          const levelsNow = pending.has(s.key) ? (pending.get(s.key) as number[]) : s.currentLevels;
           return (
             <li
               key={s.key}
@@ -90,9 +102,24 @@ export function PersonRoleEditor({ userId, personName, systems }: { userId: numb
               </div>
               {s.locked ? (
                 <span className="flex flex-wrap items-center gap-2">
-                  <LevelChip levels={s.levels} value={s.current} />
+                  {s.multi ? <LevelSetChip levels={s.levels} values={s.currentLevels} /> : <LevelChip levels={s.levels} value={s.current} />}
                   <span className="small">{s.locked}</span>
                 </span>
+              ) : s.multi ? (
+                <LevelMultiSelect
+                  levels={s.levels}
+                  original={s.currentLevels}
+                  value={levelsNow}
+                  label={`บทบาทใน${s.name}ของ ${personName}`}
+                  onChange={(v) =>
+                    setPending((p) => {
+                      const n = new Map(p);
+                      if (sameSet(v, s.currentLevels)) n.delete(s.key);
+                      else n.set(s.key, v);
+                      return n;
+                    })
+                  }
+                />
               ) : (
                 <LevelSelect
                   levels={s.levels}

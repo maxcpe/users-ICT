@@ -5,7 +5,7 @@ import { SystemRoleEditor, type EditableRow, type PeopleFilter } from "@/compone
 import { requireActor } from "@/lib/access";
 import { prisma } from "@/lib/db";
 import { dbNames } from "@/lib/env";
-import { distinctValues, levelCounts, listHoldersPage, searchStaff, type StaffFilter, type SystemDef } from "@/lib/registry";
+import { countHolders, distinctValues, levelCounts, listHoldersPage, searchStaff, type StaffFilter, type SystemDef } from "@/lib/registry";
 import { canSetRole, canViewSystem } from "@/lib/roles";
 import { getSystem } from "@/lib/system-repo";
 import { USERS_SYSTEM_KEY } from "@/lib/systems";
@@ -51,7 +51,8 @@ export default async function SystemPeople({ params, searchParams }: { params: P
     distinctValues("U_job"),
     canGrant ? searchStaff({ q: "", withoutRoleIn: system, limit: 0 }).then((r) => r.total) : Promise.resolve(0),
   ]);
-  const total = [...counts.values()].reduce((a, b) => a + b, 0);
+  // ระบบหลายสิทธิ์ คนหนึ่งนับได้หลายระดับ จึงนับ "ทั้งหมด" แยก (ไม่นับซ้ำ)
+  const total = system.multi ? await countHolders(system) : [...counts.values()].reduce((a, b) => a + b, 0);
   const countOf = (v: number) => counts.get(v) ?? 0;
   const otherCount = [...counts].filter(([v]) => !system.levels.some((l) => l.value === v)).reduce((a, [, n]) => a + n, 0);
 
@@ -86,6 +87,7 @@ export default async function SystemPeople({ params, searchParams }: { params: P
     email: blankToNull(h.email),
     branch: blankToNull(h.branch),
     level: h.level,
+    levels: h.levels,
     locked: readOnly
       ? "โหมดอ่านข้อมูลจริง"
       : inactive.has(h.id)
@@ -149,7 +151,7 @@ export default async function SystemPeople({ params, searchParams }: { params: P
       </form>
 
       <SystemRoleEditor
-        system={{ key, name: system.name, note: system.note, levels: system.levels }}
+        system={{ key, name: system.name, note: system.note, levels: system.levels, multi: system.multi }}
         rows={rows}
         mode={level === "none" ? "none" : "holders"}
         matched={matched}
@@ -161,7 +163,7 @@ export default async function SystemPeople({ params, searchParams }: { params: P
   );
 }
 
-type PageRow = { id: number; name: string | null; email: string | null; branch: string | null; level: number | null };
+type PageRow = { id: number; name: string | null; email: string | null; branch: string | null; level: number | null; levels: number[] };
 
 /** หนึ่งหน้าของตาราง: คนที่มีสิทธิ์ (ตามระดับ) หรือคนที่ยังไม่มีสิทธิ์ (level = none) */
 async function loadPage(
@@ -170,7 +172,7 @@ async function loadPage(
 ): Promise<{ rows: PageRow[]; total: number }> {
   if (opts.level === "none") {
     const r = await searchStaff({ q: opts.q, withoutRoleIn: system, filter: opts.filter, limit: PAGE_SIZE, offset: opts.offset });
-    return { rows: r.rows.map((x) => ({ ...x, level: null })), total: r.total };
+    return { rows: r.rows.map((x) => ({ ...x, level: null, levels: [] })), total: r.total };
   }
   return listHoldersPage(system, { q: opts.q, filter: opts.filter, level: opts.level, offset: opts.offset, limit: PAGE_SIZE });
 }

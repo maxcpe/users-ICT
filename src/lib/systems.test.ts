@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   checkLevelChange,
   describeLevel,
+  levelSetText,
   isAllowedRoleColumn,
   isValidSystemKey,
   parseLevels,
@@ -85,5 +86,16 @@ describe("แก้ระดับที่มีคนใช้อยู่ (sp
   it("ค่าซ้ำและรายการว่างไม่ผ่าน", () => {
     expect(checkLevelChange([{ value: 1, label: "a" }, { value: 1, label: "b" }], new Map())).toEqual([{ code: "duplicate", value: 1 }]);
     expect(checkLevelChange([], new Map())).toEqual([{ code: "empty" }]);
+  });
+});
+
+describe("levelSetText", () => {
+  const lv = [{ value: 1, label: "ผู้ใช้งาน" }, { value: 80, label: "ฝ่ายบุคคล" }];
+  it("เรียงจากน้อยไปมาก และบอกค่าอื่น", () => {
+    expect(levelSetText(lv, [80, 1])).toBe("ผู้ใช้งาน, ฝ่ายบุคคล");
+    expect(levelSetText(lv, [7])).toBe("ค่าอื่น (7)");
+  });
+  it("ว่าง = ไม่มีสิทธิ์", () => {
+    expect(levelSetText(lv, [])).toBe("ไม่มีสิทธิ์");
   });
 });

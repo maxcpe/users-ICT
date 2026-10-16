@@ -21,6 +21,8 @@ export type SystemDef = {
   unconfirmed: boolean;
   active: boolean;
   sortOrder: number;
+  /** หลายสิทธิ์ต่อคน (spec 2.3) — ใช้กับ storage = table เท่านั้น */
+  multi: boolean;
 };
 
 export type StaffRow = {
@@ -32,7 +34,11 @@ export type StaffRow = {
   branch: string | null;
 };
 
-export type StaffWithRoles = StaffRow & { roles: Record<string, number | null> };
+/**
+ * roles: ค่าเดียวต่อระบบ (ระบบหลายสิทธิ์ = ระดับสูงสุด ใช้แสดงย่อ)
+ * roleSets: ทุกบทบาทต่อระบบ (ระบบปกติมีไม่เกิน 1 ค่า) — spec 2.3
+ */
+export type StaffWithRoles = StaffRow & { roles: Record<string, number | null>; roleSets: Record<string, number[]> };
 
 type Db = typeof prisma | Tx;
 
@@ -204,7 +210,11 @@ export async function listStaff(opts: {
 
   const result: StaffWithRoles[] = rows.map((r) => {
     const roles: Record<string, number | null> = {};
-    for (const s of columnSystems) roles[s.key] = toNum(r[`r_${s.key}`]);
+    const roleSets: Record<string, number[]> = {};
+    for (const s of columnSystems) {
+      roles[s.key] = toNum(r[`r_${s.key}`]);
+      roleSets[s.key] = roles[s.key] === null ? [] : [roles[s.key]!];
+    }
     return {
       id: Number(r.id),
       name: (r.name as string | null) ?? null,
@@ -213,6 +223,7 @@ export async function listStaff(opts: {
       job: (r.job as string | null) ?? null,
       branch: (r.branch as string | null) ?? null,
       roles,
+      roleSets,
     };
   });
 
@@ -223,10 +234,13 @@ export async function listStaff(opts: {
       SELECT U_id AS id, system_key AS k, level FROM ${table("user_roles")}
       WHERE U_id IN (${Prisma.join(ids)}) AND system_key IN (${Prisma.join(tableKeys)})`;
     const byId = new Map(result.map((r) => [r.id, r]));
-    for (const row of result) for (const k of tableKeys) row.roles[k] = null;
+    for (const row of result) for (const k of tableKeys) { row.roles[k] = null; row.roleSets[k] = []; }
     for (const t of tr) {
       const target = byId.get(Number(t.id));
-      if (target) target.roles[t.k] = toNum(t.level);
+      const v = toNum(t.level);
+      if (!target || v === null) continue;
+      target.roleSets[t.k] = [...(target.roleSets[t.k] ?? []), v].sort((a, b) => a - b);
+      target.roles[t.k] = Math.max(target.roles[t.k] ?? v, v);
     }
   }
 
@@ -235,21 +249,36 @@ export async function listStaff(opts: {
 
 // ---------- สิทธิ์ของระบบหนึ่ง ----------
 
-export type Holder = StaffRow & { level: number };
+/** level = ค่าเดียว (ระบบหลายสิทธิ์ = สูงสุด), levels = ทุกบทบาท (spec 2.3) */
+export type Holder = StaffRow & { level: number; levels: number[] };
+
+/** user_roles ของระบบหนึ่ง รวมเป็นแถวละคน (lv = สูงสุด, lvs = ทุกบทบาทคั่นด้วย ,) */
+function roleAgg(key: string): Prisma.Sql {
+  return Prisma.sql`(SELECT x.U_id, MAX(x.level) AS lv, GROUP_CONCAT(x.level ORDER BY x.level) AS lvs
+    FROM ${table("user_roles")} x WHERE x.system_key = ${key} GROUP BY x.U_id)`;
+}
+
+function parseLevelList(v: unknown, fallback: number): number[] {
+  if (v === null || v === undefined) return [fallback];
+  return String(v).split(",").map(Number).filter((n) => Number.isFinite(n));
+}
 
 /** ทุกคนที่มีค่าในระบบนี้ (ไม่มีนักศึกษา) */
 export async function listHolders(system: SystemDef, db: Db = prisma): Promise<Holder[]> {
-  let rows: (StaffRow & { level: unknown })[];
+  let rows: (StaffRow & { level: unknown; levels?: unknown })[];
   if (system.storage === "column") {
     const c = await roleColumn(system.columnName ?? "");
     rows = await db.$queryRaw`SELECT ${STAFF_COLS}, ${c} AS level FROM ${table("user")} u
       WHERE ${c} IS NOT NULL AND ${NOT_STUDENT} ORDER BY u.U_name, u.U_id`;
   } else {
-    rows = await db.$queryRaw`SELECT ${STAFF_COLS}, r.level AS level
-      FROM ${table("user_roles")} r JOIN ${table("user")} u ON u.U_id = r.U_id
-      WHERE r.system_key = ${system.key} AND ${NOT_STUDENT} ORDER BY u.U_name, u.U_id`;
+    rows = await db.$queryRaw`SELECT ${STAFF_COLS}, r.lv AS level, r.lvs AS levels
+      FROM ${roleAgg(system.key)} r JOIN ${table("user")} u ON u.U_id = r.U_id
+      WHERE ${NOT_STUDENT} ORDER BY u.U_name, u.U_id`;
   }
-  return rows.map((r) => ({ ...r, id: Number(r.id), level: Number(r.level) }));
+  return rows.map((r) => {
+    const level = Number(r.level);
+    return { ...r, id: Number(r.id), level, levels: parseLevelList(r.levels, level) };
+  });
 }
 
 /** จำนวนคนต่อค่าระดับ นับในฐาน (GROUP BY) ไม่ดึงทุกแถว — ใช้กับกราฟ แท็บ และตรวจการแก้ระดับ */
@@ -298,9 +327,38 @@ export async function levelCountsAll(systems: SystemDef[]): Promise<Map<string, 
 }
 
 export async function countHolders(system: SystemDef, db: Db = prisma): Promise<number> {
-  let n = 0;
-  for (const v of (await levelCounts(system, db)).values()) n += v;
-  return n;
+  return (await holderCounts([system], db)).get(system.key) ?? 0;
+}
+
+/** จำนวนคนที่มีสิทธิ์ (ไม่นับซ้ำคนที่มีหลายบทบาท) ของหลายระบบ ใน 2 query */
+export async function holderCounts(systems: SystemDef[], db: Db = prisma): Promise<Map<string, number>> {
+  const out = new Map<string, number>(systems.map((s) => [s.key, 0]));
+  const tableKeys = systems.filter((s) => s.storage === "table").map((s) => s.key);
+  const columnSystems = systems.filter((s) => s.storage === "column" && s.columnName);
+  const parts = await Promise.all(
+    columnSystems.map(async (s) => {
+      const c = await roleColumn(s.columnName!);
+      return Prisma.sql`SELECT ${s.key} AS k, COUNT(*) AS n FROM ${table("user")} u WHERE ${c} IS NOT NULL AND ${NOT_STUDENT}`;
+    }),
+  );
+  const [t, c] = await Promise.all([
+    tableKeys.length
+      ? db.$queryRaw<{ k: string; n: bigint }[]>`SELECT r.system_key AS k, COUNT(DISTINCT r.U_id) AS n
+          FROM ${table("user_roles")} r JOIN ${table("user")} u ON u.U_id = r.U_id
+          WHERE r.system_key IN (${Prisma.join(tableKeys)}) AND ${NOT_STUDENT} GROUP BY r.system_key`
+      : Promise.resolve([]),
+    parts.length ? db.$queryRaw<{ k: string; n: bigint }[]>`${Prisma.join(parts, " UNION ALL ")}` : Promise.resolve([]),
+  ]);
+  for (const r of [...t, ...c]) out.set(r.k, Number(r.n));
+  return out;
+}
+
+/** จำนวนคนที่ถือมากกว่า 1 บทบาทในระบบนี้ (ปิดสวิตช์หลายสิทธิ์ได้เมื่อเป็น 0) */
+export async function countMultiHolders(system: SystemDef, db: Db = prisma): Promise<number> {
+  if (system.storage !== "table") return 0;
+  const rows = await db.$queryRaw<{ n: bigint }[]>`SELECT COUNT(*) AS n FROM
+    (SELECT U_id FROM ${table("user_roles")} WHERE system_key = ${system.key} GROUP BY U_id HAVING COUNT(*) > 1) m`;
+  return Number(rows[0]?.n ?? 0);
 }
 
 /**
@@ -327,22 +385,34 @@ export async function listHoldersPage(
     levelExpr = c;
     where.push(Prisma.sql`${c} IS NOT NULL`);
   } else {
-    from = Prisma.sql`${table("user_roles")} r JOIN ${table("user")} u ON u.U_id = r.U_id`;
-    levelExpr = Prisma.sql`r.level`;
-    where.push(Prisma.sql`r.system_key = ${system.key}`);
+    // รวมเป็นแถวละคน: ระบบหลายสิทธิ์มีหลายแถวต่อคนใน user_roles
+    from = Prisma.sql`${roleAgg(system.key)} r JOIN ${table("user")} u ON u.U_id = r.U_id`;
+    levelExpr = Prisma.sql`r.lv`;
   }
-  if (typeof opts.level === "number") where.push(Prisma.sql`${levelExpr} = ${opts.level}`);
-  if (opts.level === "other") {
-    const known = system.levels.map((l) => l.value);
-    if (known.length) where.push(Prisma.sql`${levelExpr} NOT IN (${Prisma.join(known)})`);
+  const known = system.levels.map((l) => l.value);
+  if (system.storage === "column") {
+    if (typeof opts.level === "number") where.push(Prisma.sql`${levelExpr} = ${opts.level}`);
+    if (opts.level === "other" && known.length) where.push(Prisma.sql`${levelExpr} NOT IN (${Prisma.join(known)})`);
+  } else {
+    const has = (cond: Prisma.Sql) =>
+      Prisma.sql`EXISTS (SELECT 1 FROM ${table("user_roles")} y WHERE y.U_id = u.U_id AND y.system_key = ${system.key} AND ${cond})`;
+    if (typeof opts.level === "number") where.push(has(Prisma.sql`y.level = ${opts.level}`));
+    if (opts.level === "other" && known.length) where.push(has(Prisma.sql`y.level NOT IN (${Prisma.join(known)})`));
   }
+  const levelsExpr = system.storage === "column" ? Prisma.sql`NULL` : Prisma.sql`r.lvs`;
   const w = Prisma.join(where, " AND ");
   const [rows, count] = await Promise.all([
-    prisma.$queryRaw<(StaffRow & { level: unknown })[]>`SELECT ${STAFF_COLS}, ${levelExpr} AS level FROM ${from}
-      WHERE ${w} ORDER BY u.U_name, u.U_id LIMIT ${opts.limit} OFFSET ${opts.offset}`,
+    prisma.$queryRaw<(StaffRow & { level: unknown; levels: unknown })[]>`SELECT ${STAFF_COLS}, ${levelExpr} AS level, ${levelsExpr} AS levels
+      FROM ${from} WHERE ${w} ORDER BY u.U_name, u.U_id LIMIT ${opts.limit} OFFSET ${opts.offset}`,
     prisma.$queryRaw<{ n: bigint }[]>`SELECT COUNT(*) AS n FROM ${from} WHERE ${w}`,
   ]);
-  return { rows: rows.map((r) => ({ ...r, id: Number(r.id), level: Number(r.level) })), total: Number(count[0]?.n ?? 0) };
+  return {
+    rows: rows.map((r) => {
+      const level = Number(r.level);
+      return { ...r, id: Number(r.id), level, levels: parseLevelList(r.levels, level) };
+    }),
+    total: Number(count[0]?.n ?? 0),
+  };
 }
 
 /**
@@ -415,15 +485,80 @@ export async function writeRole(tx: Tx, system: SystemDef, userId: number, value
     if (affected > 1) throw new Error("ตั้งสิทธิ์กระทบมากกว่า 1 แถว");
     return;
   }
-  if (value === null) {
-    await tx.$executeRaw`DELETE FROM ${table("user_roles")} WHERE U_id = ${userId} AND system_key = ${system.key}`;
-  } else {
-    await tx.$executeRaw`INSERT INTO ${table("user_roles")} (U_id, system_key, level) VALUES (${userId}, ${system.key}, ${value})
-      ON DUPLICATE KEY UPDATE level = VALUES(level)`;
+  // PK = (U_id, system_key, level) (spec 2.3) จึงลบของเดิมก่อนแล้วค่อยเพิ่ม ให้ระบบปกติมีไม่เกิน 1 แถว
+  await tx.$executeRaw`DELETE FROM ${table("user_roles")} WHERE U_id = ${userId} AND system_key = ${system.key}`;
+  if (value !== null) {
+    await tx.$executeRaw`INSERT INTO ${table("user_roles")} (U_id, system_key, level) VALUES (${userId}, ${system.key}, ${value})`;
   }
 }
 
-/** สิทธิ์ทุกระบบของคนหนึ่ง (ไม่ล็อกแถว) */
+/** ทุกบทบาทของคนหนึ่งในระบบหลายสิทธิ์ (ล็อกแถว) เรียงจากน้อยไปมาก */
+export async function readRoleSetForUpdate(tx: Tx, system: SystemDef, userId: number): Promise<number[]> {
+  if (system.storage !== "table") {
+    const v = await readRoleForUpdate(tx, system, userId);
+    return v === null ? [] : [v];
+  }
+  const rows = await tx.$queryRaw<{ v: unknown }[]>`SELECT level AS v FROM ${table("user_roles")}
+    WHERE U_id = ${userId} AND system_key = ${system.key} ORDER BY level FOR UPDATE`;
+  return rows.map((r) => toNum(r.v)).filter((v): v is number => v !== null);
+}
+
+/** ตั้งชุดบทบาท (ระบบหลายสิทธิ์เท่านั้น) — [] = ไม่มีสิทธิ์ */
+export async function writeRoleSet(tx: Tx, system: SystemDef, userId: number, levels: number[]): Promise<void> {
+  if (system.storage !== "table") throw new Error("ระบบหลายสิทธิ์ต้องเก็บใน user_roles");
+  await tx.$executeRaw`DELETE FROM ${table("user_roles")} WHERE U_id = ${userId} AND system_key = ${system.key}`;
+  const uniq = [...new Set(levels)];
+  if (uniq.length) {
+    await tx.$executeRaw`INSERT INTO ${table("user_roles")} (U_id, system_key, level)
+      VALUES ${Prisma.join(uniq.map((l) => Prisma.sql`(${userId}, ${system.key}, ${l})`))}`;
+  }
+}
+
+/**
+ * ย้ายระบบแบบ column ไป user_roles (เปิดหลายสิทธิ์, spec 2.3): คัดลอกทุกค่า แล้วตั้งคอลัมน์เดิมเป็น NULL
+ * คืนค่าเดิมของทุกคนสำหรับ audit log — เรียกใน transaction เดียวกับการเปลี่ยน storage
+ */
+export async function moveColumnToRoles(tx: Tx, system: SystemDef): Promise<Record<number, number>> {
+  if (system.storage !== "column") return {};
+  assertUserWritable();
+  const c = await roleColumn(system.columnName ?? "");
+  const col = await roleColumn(system.columnName ?? "", false);
+  const rows = await tx.$queryRaw<{ id: unknown; v: unknown }[]>`SELECT u.U_id AS id, ${c} AS v FROM ${table("user")} u
+    WHERE ${c} IS NOT NULL FOR UPDATE`;
+  const before: Record<number, number> = {};
+  for (const r of rows) {
+    const v = toNum(r.v);
+    if (v !== null) before[Number(r.id)] = v;
+  }
+  const entries = Object.entries(before);
+  for (let i = 0; i < entries.length; i += 500) {
+    const chunk = entries.slice(i, i + 500);
+    await tx.$executeRaw`INSERT IGNORE INTO ${table("user_roles")} (U_id, system_key, level)
+      VALUES ${Prisma.join(chunk.map(([id, v]) => Prisma.sql`(${Number(id)}, ${system.key}, ${v})`))}`;
+  }
+  await tx.$executeRaw`UPDATE ${table("user")} SET ${col} = NULL WHERE ${col} IS NOT NULL`;
+  return before;
+}
+
+/** ทุกบทบาทของคนหนึ่งในแต่ละระบบ (ไม่ล็อกแถว) ระบบปกติมีไม่เกิน 1 ค่า — spec 2.3 */
+export async function getRoleSetsOf(userId: number, systems: SystemDef[]): Promise<Record<string, number[]>> {
+  const single = await getRolesOf(userId, systems.filter((s) => s.storage === "column"));
+  const out: Record<string, number[]> = {};
+  for (const [k, v] of Object.entries(single)) out[k] = v === null ? [] : [v];
+  const keys = systems.filter((s) => s.storage === "table").map((s) => s.key);
+  for (const k of keys) out[k] = [];
+  if (keys.length) {
+    const rows = await prisma.$queryRaw<{ k: string; level: unknown }[]>`SELECT system_key AS k, level FROM ${table("user_roles")}
+      WHERE U_id = ${userId} AND system_key IN (${Prisma.join(keys)}) ORDER BY level`;
+    for (const r of rows) {
+      const v = toNum(r.level);
+      if (v !== null) (out[r.k] ??= []).push(v);
+    }
+  }
+  return out;
+}
+
+/** สิทธิ์ทุกระบบของคนหนึ่ง (ไม่ล็อกแถว) ระบบหลายสิทธิ์ = ระดับสูงสุด */
 export async function getRolesOf(userId: number, systems: SystemDef[]): Promise<Record<string, number | null>> {
   const out: Record<string, number | null> = {};
   const cols = systems.filter((s) => s.storage === "column" && s.columnName);
@@ -437,7 +572,10 @@ export async function getRolesOf(userId: number, systems: SystemDef[]): Promise<
   if (keys.length) {
     const rows = await prisma.$queryRaw<{ k: string; level: unknown }[]>`SELECT system_key AS k, level FROM ${table("user_roles")}
       WHERE U_id = ${userId} AND system_key IN (${Prisma.join(keys)})`;
-    for (const r of rows) out[r.k] = toNum(r.level);
+    for (const r of rows) {
+      const v = toNum(r.level);
+      if (v !== null) out[r.k] = Math.max(out[r.k] ?? v, v);
+    }
   }
   return out;
 }
