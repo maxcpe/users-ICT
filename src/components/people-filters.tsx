@@ -25,6 +25,9 @@ export function PeopleFilters({ branches, jobs, systems }: { branches: string[];
   const params = useSearchParams();
   const [q, setQ] = useState(params.get("q") ?? "");
   const [pending, start] = useTransition();
+  // มือถือยุบตัวกรองรองไว้ (ช่องค้นหาแสดงเสมอ) เปิดค้างถ้ามีตัวกรองที่ใช้อยู่
+  const secondary = ["line", "branch", "job", "status", "sys", "incomplete"].filter((k) => params.get(k)).length;
+  const [open, setOpen] = useState(secondary > 0);
 
   const get = (k: string) => params.get(k) ?? "";
   const apply = (patch: Record<string, string>) => {
@@ -61,10 +64,14 @@ export function PeopleFilters({ branches, jobs, systems }: { branches: string[];
         }}
       >
         <label htmlFor="q" className="sr-only">ค้นหาชื่อหรืออีเมล</label>
-        <input id="q" value={q} onChange={(e) => setQ(e.target.value)} className="input flex-[1_1_240px]" placeholder="ค้นหาชื่อหรืออีเมล…" />
-        <button type="submit" className="btn">ค้นหา</button>
+        <input id="q" value={q} onChange={(e) => setQ(e.target.value)} className="input flex-[1_1_240px] max-[820px]:basis-full" placeholder="ค้นหาชื่อหรืออีเมล…" />
+        <button type="submit" className="btn max-[820px]:flex-1">ค้นหา</button>
+        <button type="button" className="btn only-sm max-[820px]:flex-1" aria-expanded={open} aria-controls="people-more-filters" onClick={() => setOpen((v) => !v)}>
+          ตัวกรอง{secondary ? ` (${secondary})` : ""} {open ? "▴" : "▾"}
+        </button>
       </form>
 
+      <div id="people-more-filters" className={`grid gap-2.5${open ? "" : " max-[820px]:hidden"}`}>
       <div className="flex flex-wrap items-end gap-2.5">
         {select("f-line", "สาย", get("line"), LINES, (v) => apply({ line: v }))}
         {select("f-branch", "สังกัด", get("branch"), [["", "ทุกสังกัด"], ...branches.map((b) => [b, b] as const)], (v) => apply({ branch: v }))}
@@ -102,6 +109,7 @@ export function PeopleFilters({ branches, jobs, systems }: { branches: string[];
             ล้างตัวกรอง ({active})
           </button>
         )}
+      </div>
       </div>
     </div>
   );

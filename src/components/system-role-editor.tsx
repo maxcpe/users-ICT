@@ -203,7 +203,7 @@ export function SystemRoleEditor({
               return (
                 <tr key={r.id} style={p ? { background: "color-mix(in srgb, var(--warn) 6%, transparent)" } : undefined}>
                   {withSelection && (
-                    <td>
+                    <td className="cell-check">
                       <input
                         type="checkbox"
                         className="check"
@@ -214,7 +214,7 @@ export function SystemRoleEditor({
                       />
                     </td>
                   )}
-                  <td>
+                  <td className="cell-name">
                     <div className="name">
                       {r.name}{" "}
                       {r.locked === "ท่าน" && <span className="chip chip-cyan">ท่าน</span>}

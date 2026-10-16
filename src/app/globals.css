@@ -186,6 +186,15 @@ select.input option { background: var(--option-bg); }
   .table-cards .cell-role { grid-column: 1 / -1; }
   .table-cards .cell-role .input { width: 100%; min-width: 0; }
   .table-cards .cell-empty { grid-column: 1 / -1; }
+  /* ปุ่มของแถว (เช่น "เปิด") อยู่ขวาสุดของแถวแรก คู่กับชื่อ */
+  .table-cards:has(.cell-action) tr { grid-template-columns: 34px minmax(0, 1fr) auto; }
+  .table-cards.no-check:has(.cell-action) tr { grid-template-columns: minmax(0, 1fr) auto; }
+  /* ระบุตำแหน่งครบทุกช่องในแถวแรก ไม่ให้ grid วางเอง (ชื่อจะไปแย่งคอลัมน์ช่องติ๊ก) */
+  .table-cards tbody .cell-check { grid-row: 1; grid-column: 1; }
+  .table-cards .cell-name { grid-row: 1; grid-column: 2; }
+  .table-cards.no-check .cell-name { grid-column: 1; }
+  .table-cards .cell-action { grid-row: 1; grid-column: -2 / -1; }
+  .table-cards thead .cell-action { display: none; }
 
   .bulk { padding: 12px; }
   .bulk > .ml-auto { margin-left: 0; width: 100%; }

@@ -93,7 +93,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
           {central ? " ทั้งหมด" : ""}
         </h1>
         {central && !dbNames().userDbReadOnly && (
-          <Link href="/u/new" className="btn btn-primary">＋ เพิ่มบุคลากร</Link>
+          <Link href="/u/new" className="btn btn-primary max-[820px]:w-full">＋ เพิ่มบุคลากร</Link>
         )}
       </div>
       {deleted && (
