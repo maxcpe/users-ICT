@@ -46,7 +46,7 @@ export default async function SystemOverview({ params }: { params: Promise<{ key
         </Link>
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-3.5">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-3.5">
         <section className="glass pad" aria-labelledby="by-level">
           <h2 id="by-level" className="h2">จำนวนคนตามระดับ</h2>
           {system.levels.length === 0 && <p className="small">ยังไม่ได้กำหนดระดับ</p>}

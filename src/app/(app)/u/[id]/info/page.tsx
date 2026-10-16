@@ -39,7 +39,7 @@ export default async function PersonInfo({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-3.5">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-3.5">
       <section className="glass pad" aria-labelledby="general">
         <h2 id="general" className="h2">ข้อมูลทั่วไป</h2>
         <dl className="kv">

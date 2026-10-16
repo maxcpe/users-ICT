@@ -49,20 +49,20 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
       <p className="lead">ทุกการเปลี่ยนแปลง แก้หรือลบไม่ได้{actor.role === "system" ? " · ท่านเห็นเฉพาะระบบที่ดูแล" : ""}</p>
 
       <form className="mb-3.5 flex flex-wrap items-end gap-2.5">
-        <div className="grid gap-1.5">
+        <div className="grid min-w-[180px] flex-1 gap-1.5 max-[820px]:basis-full">
           <label htmlFor="f-system" className="label">ระบบ</label>
           <select id="f-system" name="system" className="input" defaultValue={systemKey}>
             <option value="">ทุกระบบที่เห็นได้</option>
             {systems.map((s) => <option key={s.key} value={s.key}>{s.name}</option>)}
           </select>
         </div>
-        <div className="grid gap-1.5">
+        <div className="grid min-w-[180px] flex-1 gap-1.5 max-[820px]:basis-full">
           <label htmlFor="f-action" className="label">การกระทำ</label>
           <select id="f-action" name="action" className="input" defaultValue={action}>
             {ACTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </div>
-        <button type="submit" className="btn">กรอง</button>
+        <button type="submit" className="btn max-[820px]:flex-1">กรอง</button>
         {(systemKey || action) && <Link href="/audit" className="btn">ล้าง</Link>}
       </form>
 

@@ -152,7 +152,7 @@ export default async function SystemsPage({ searchParams }: { searchParams: Prom
       )}
 
       {shown.length > 0 && view === "card" && (
-        <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-3.5 p-0">
+        <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(min(320px,100%),1fr))] gap-3.5 p-0">
           {shown.map(({ s, mine, holderCount, warnings }) => {
             const top = s.levels[s.levels.length - 1]?.value;
             return (

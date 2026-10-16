@@ -214,7 +214,12 @@ select.input option { background: var(--option-bg); }
 /* แถวระดับ (หน้าระดับสิทธิ์ / ลงทะเบียนระบบ) */
 .lv-row { display: grid; grid-template-columns: 90px 1fr 1fr 44px; gap: 10px; align-items: center; padding: 10px 16px; border-top: 1px solid var(--line-2); }
 .lv-row:first-child { border-top: 0; }
-@media (max-width: 820px) { .lv-row { grid-template-columns: 80px 1fr 44px; } .lv-row .desc-col { display: none; } }
+/* มือถือ: คำอธิบายย้ายไปแถวที่สองของระดับนั้น (ไม่ซ่อน — ต้องแก้ได้บนมือถือ) หัวคอลัมน์คำอธิบายซ่อนได้ */
+@media (max-width: 820px) {
+  .lv-row { grid-template-columns: 80px minmax(0, 1fr) 44px; }
+  .lv-row .desc-col { grid-column: 1 / -1; grid-row: 2; }
+  .lv-row.small .desc-col { display: none; }
+}
 .icon-btn { width: 44px; height: 44px; border-radius: var(--r-md); border: 1px solid var(--line); background: transparent; color: var(--bad-ink); display: grid; place-items: center; }
 .icon-btn:disabled { opacity: .35; cursor: not-allowed; }
 

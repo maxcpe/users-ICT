@@ -31,7 +31,7 @@ export default async function SystemSettings({
         <span>เปลี่ยน key เป็น <b className="mono">{key}</b> แล้ว อย่าลืมแจ้งนักพัฒนาของเว็บนี้ให้แก้ key ในโค้ด</span>
       </div>
     )}
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-3.5">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-3.5">
       <SettingsForm system={system} locked={locked} />
       {!locked && (
         <section className="glass pad content-start" style={{ borderColor: "#ff4d6d55" }} aria-labelledby="danger">
