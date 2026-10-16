@@ -170,51 +170,55 @@ export function SystemRoleEditor({
       )}
 
       <div className="glass table-wrap">
-        <table className={`table table-cards${withSelection ? "" : " no-check"}`}>
-          <thead>
-            <tr>
+        <table role="table" className={`table table-cards${withSelection ? "" : " no-check"}`}>
+          <thead role="rowgroup">
+            <tr role="row">
               {withSelection && (
-                <th scope="col" className="cell-check w-11">
-                  <input
-                    id="select-page"
-                    type="checkbox"
-                    className="check"
-                    aria-label="เลือกทุกคนในหน้านี้"
-                    checked={allSelected}
-                    disabled={selectable.length === 0}
-                    onChange={(e) => setSelected(e.target.checked ? new Map(selectable.map((r) => [r.id, r])) : new Map())}
-                  />
+                <th role="columnheader" scope="col" className="cell-check w-11">
+                  <label className="hit">
+                    <input
+                      id="select-page"
+                      type="checkbox"
+                      className="check"
+                      aria-label="เลือกทุกคนในหน้านี้"
+                      checked={allSelected}
+                      disabled={selectable.length === 0}
+                      onChange={(e) => setSelected(e.target.checked ? new Map(selectable.map((r) => [r.id, r])) : new Map())}
+                    />
+                  </label>
                   {/* มือถือไม่มีหัวตาราง จึงแสดงข้อความกำกับช่องเลือกทั้งหน้า */}
                   <label htmlFor="select-page" className="small font-normal min-[821px]:hidden">เลือกทุกคนในหน้านี้</label>
                 </th>
               )}
-              <th scope="col">ชื่อ</th>
-              <th scope="col" className="hide-sm">สังกัด</th>
-              <th scope="col">สิทธิ์{system.name}</th>
+              <th role="columnheader" scope="col">ชื่อ</th>
+              <th role="columnheader" scope="col" className="hide-sm">สังกัด</th>
+              <th role="columnheader" scope="col">สิทธิ์{system.name}</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody role="rowgroup">
             {visibleRows.length === 0 && (
-              <tr><td colSpan={withSelection ? 4 : 3} className="cell-empty py-10 text-center text-muted">{emptyText}</td></tr>
+              <tr role="row"><td role="cell" colSpan={withSelection ? 4 : 3} className="cell-empty py-10 text-center text-muted">{emptyText}</td></tr>
             )}
             {visibleRows.map((r) => {
               const p = pending.get(r.id);
               const value = p ? p.value : r.level;
               return (
-                <tr key={r.id} style={p ? { background: "color-mix(in srgb, var(--warn) 6%, transparent)" } : undefined}>
+                <tr role="row" key={r.id} style={p ? { background: "color-mix(in srgb, var(--warn) 6%, transparent)" } : undefined}>
                   {withSelection && (
-                    <td className="cell-check">
-                      <input
-                        type="checkbox"
-                        className="check"
-                        aria-label={`เลือก ${r.name}`}
-                        checked={selected.has(r.id)}
-                        disabled={!!r.locked}
-                        onChange={(e) => toggle(r, e.target.checked)}
-                      />
+                    <td role="cell" className="cell-check">
+                      <label className="hit">
+                        <input
+                          type="checkbox"
+                          className="check"
+                          aria-label={`เลือก ${r.name}`}
+                          checked={selected.has(r.id)}
+                          disabled={!!r.locked}
+                          onChange={(e) => toggle(r, e.target.checked)}
+                        />
+                      </label>
                     </td>
                   )}
-                  <td className="cell-name">
+                  <td role="cell" className="cell-name">
                     <div className="name">
                       {r.name}{" "}
                       {r.locked === "ท่าน" && <span className="chip chip-cyan">ท่าน</span>}
@@ -225,8 +229,8 @@ export function SystemRoleEditor({
                       {r.branch && <span className="min-[821px]:hidden"> · {r.branch}</span>}
                     </div>
                   </td>
-                  <td className="hide-sm">{r.branch ?? "—"}</td>
-                  <td className="cell-role">
+                  <td role="cell" className="hide-sm">{r.branch ?? "—"}</td>
+                  <td role="cell" className="cell-role">
                     {r.locked ? (
                       <span className="flex flex-wrap items-center gap-2">
                         <LevelChip levels={system.levels} value={r.level} />

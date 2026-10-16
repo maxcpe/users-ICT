@@ -67,57 +67,61 @@ export function PeopleTable({
     <>
       <p aria-live="polite" className="small m-0 mb-2">{message}</p>
       <div className="glass table-wrap">
-        <table className={`table table-cards${bulkSystems.length > 0 ? "" : " no-check"}`}>
-          <thead>
-            <tr>
+        <table role="table" className={`table table-cards${bulkSystems.length > 0 ? "" : " no-check"}`}>
+          <thead role="rowgroup">
+            <tr role="row">
               {bulkSystems.length > 0 && (
-                <th scope="col" className="cell-check w-11">
-                  <input
-                    id="people-select-page"
-                    type="checkbox"
-                    className="check"
-                    aria-label="เลือกทุกคนในหน้านี้"
-                    checked={allChecked}
-                    onChange={(e) => setSelected(e.target.checked ? new Set(rows.map((r) => r.id)) : new Set())}
-                  />
+                <th role="columnheader" scope="col" className="cell-check w-11">
+                  <label className="hit">
+                    <input
+                      id="people-select-page"
+                      type="checkbox"
+                      className="check"
+                      aria-label="เลือกทุกคนในหน้านี้"
+                      checked={allChecked}
+                      onChange={(e) => setSelected(e.target.checked ? new Set(rows.map((r) => r.id)) : new Set())}
+                    />
+                  </label>
                   {/* มือถือไม่มีหัวตาราง จึงแสดงข้อความกำกับช่องเลือกทั้งหน้า */}
                   <label htmlFor="people-select-page" className="small font-normal min-[821px]:hidden">เลือกทุกคนในหน้านี้</label>
                 </th>
               )}
-              <th scope="col">ชื่อ</th>
-              <th scope="col" className="hide-sm">สังกัด</th>
-              <th scope="col">สิทธิ์</th>
-              <th scope="col" className="cell-action"><span className="sr-only">เปิด</span></th>
+              <th role="columnheader" scope="col">ชื่อ</th>
+              <th role="columnheader" scope="col" className="hide-sm">สังกัด</th>
+              <th role="columnheader" scope="col">สิทธิ์</th>
+              <th role="columnheader" scope="col" className="cell-action"><span className="sr-only">เปิด</span></th>
             </tr>
           </thead>
-          <tbody>
+          <tbody role="rowgroup">
             {rows.map((p) => (
-              <tr key={p.id}>
+              <tr role="row" key={p.id}>
                 {bulkSystems.length > 0 && (
-                  <td className="cell-check">
-                    <input
-                      type="checkbox"
-                      className="check"
-                      aria-label={`เลือก ${p.name}`}
-                      checked={selected.has(p.id)}
-                      disabled={p.id === selfId}
-                      title={p.id === selfId ? "ตั้งสิทธิ์ตัวเองไม่ได้" : undefined}
-                      onChange={(e) => toggle(p.id, e.target.checked)}
-                    />
+                  <td role="cell" className="cell-check">
+                    <label className="hit">
+                      <input
+                        type="checkbox"
+                        className="check"
+                        aria-label={`เลือก ${p.name}`}
+                        checked={selected.has(p.id)}
+                        disabled={p.id === selfId}
+                        title={p.id === selfId ? "ตั้งสิทธิ์ตัวเองไม่ได้" : undefined}
+                        onChange={(e) => toggle(p.id, e.target.checked)}
+                      />
+                    </label>
                   </td>
                 )}
-                <td className="cell-name">
+                <td role="cell" className="cell-name">
                   <div className="name" style={p.inactiveReason ? { color: "var(--faint)" } : undefined}>{p.name}</div>
                   <div className="sub">
                     {p.email ?? "ไม่มีอีเมล"}
                     {p.branch && <span className="min-[821px]:hidden"> · {p.branch}</span>}
                   </div>
                 </td>
-                <td className="hide-sm">
+                <td role="cell" className="hide-sm">
                   {p.branch ?? "—"}
                   {p.job && p.branch === "สำนักงานคณะ" ? <span className="sub"> · {p.job}</span> : null}
                 </td>
-                <td className="cell-role">
+                <td role="cell" className="cell-role">
                   <div className="chips">
                     {p.centralLevel === 99 && <span className="chip chip-violet">🛡️ ผู้ดูแลกลาง</span>}
                     {p.centralLevel === 50 && <span className="chip chip-violet">🔧 ผู้ดูแลระบบ</span>}
@@ -134,7 +138,7 @@ export function PeopleTable({
                             {held.length > MAX_CHIPS && (
                               <Link
                                 href={`/u/${p.id}`}
-                                className="chip chip-off no-underline"
+                                className="chip chip-off hit-area no-underline"
                                 title={held.slice(MAX_CHIPS).map(({ s }) => s.name).join(", ")}
                               >
                                 +{held.length - MAX_CHIPS} ระบบ
@@ -148,7 +152,7 @@ export function PeopleTable({
                     {p.flags.map((f) => <span key={f} className="chip chip-warn">⚠ {f}</span>)}
                   </div>
                 </td>
-                <td className="cell-action">
+                <td role="cell" className="cell-action">
                   <Link href={`/u/${p.id}`} className="btn btn-sm" aria-label={`เปิด ${p.name}`}>เปิด</Link>
                 </td>
               </tr>
