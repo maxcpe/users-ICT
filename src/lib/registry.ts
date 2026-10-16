@@ -368,10 +368,13 @@ async function searchWhere(opts: StaffSearch): Promise<Prisma.Sql> {
 }
 
 /** ค้นหาพร้อมจำนวนทั้งหมดที่ตรง (rows จำกัดตาม limit, total นับในฐาน) */
-export async function searchStaff(opts: StaffSearch & { limit: number }): Promise<{ rows: StaffRow[]; total: number }> {
+export async function searchStaff(opts: StaffSearch & { limit: number; offset?: number }): Promise<{ rows: StaffRow[]; total: number }> {
   const w = await searchWhere(opts);
   const [rows, count] = await Promise.all([
-    prisma.$queryRaw<StaffRow[]>`SELECT ${STAFF_COLS} FROM ${table("user")} u WHERE ${w} ORDER BY u.U_name, u.U_id LIMIT ${opts.limit}`,
+    opts.limit > 0
+      ? prisma.$queryRaw<StaffRow[]>`SELECT ${STAFF_COLS} FROM ${table("user")} u WHERE ${w}
+          ORDER BY u.U_name, u.U_id LIMIT ${opts.limit} OFFSET ${opts.offset ?? 0}`
+      : Promise.resolve([] as StaffRow[]),
     prisma.$queryRaw<{ n: bigint }[]>`SELECT COUNT(*) AS n FROM ${table("user")} u WHERE ${w}`,
   ]);
   return { rows: rows.map((r) => ({ ...r, id: Number(r.id) })), total: Number(count[0]?.n ?? 0) };

@@ -67,18 +67,22 @@ export function SystemRoleEditor({
   const [confirm, setConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  // ค่าก่อนแก้ของการบันทึกครั้งล่าสุด สำหรับปุ่ม "เลิกทำ" (คนที่ตั้งเป็นไม่มีสิทธิ์จะหายจากตาราง)
+  const [undo, setUndo] = useState<{ userId: number; systemKey: string; value: number | null }[] | null>(null);
   const [busy, start] = useTransition();
 
   // แถวที่ยังไม่บันทึกแสดงบนสุดเสมอ (รวมคนที่เพิ่มใหม่และคนจากหน้าอื่น) จะได้ไม่หลุดสายตา
   const pendingRows = [...pending.values()].map((p) => p.row);
   const visibleRows = [...pendingRows, ...rows.filter((r) => !pending.has(r.id))];
-  const set = (row: EditableRow, v: number | null) =>
+  const set = (row: EditableRow, v: number | null) => {
+    setUndo(null);
     setPending((p) => {
       const n = new Map(p);
       if (v === row.level) n.delete(row.id);
       else n.set(row.id, { row, value: v });
       return n;
     });
+  };
 
   const changes = [...pending].map(([userId, p]) => ({ userId, systemKey: system.key, value: p.value }));
   const impacts: Impact[] = [...pending.values()].slice(0, 8).map((p) => ({
@@ -136,6 +140,23 @@ export function SystemRoleEditor({
           </button>
         )}
         <p aria-live="polite" className="small m-0">{message}</p>
+        {undo && (
+          <button
+            type="button"
+            className="btn btn-sm"
+            disabled={busy}
+            onClick={() =>
+              start(async () => {
+                const r = await saveRoles(undo);
+                setUndo(null);
+                setMessage(r.ok ? `เลิกทำแล้ว · ${r.message}` : r.error);
+                router.refresh();
+              })
+            }
+          >
+            ↶ เลิกทำ
+          </button>
+        )}
       </div>
 
       {canAdd && adding && (
@@ -326,6 +347,7 @@ export function SystemRoleEditor({
           start(async () => {
             const r = await saveRoles(changes);
             if (!r.ok) return setError(r.error);
+            setUndo([...pending].map(([userId, p]) => ({ userId, systemKey: system.key, value: p.row.level })));
             setConfirm(false);
             setPending(new Map());
             setAdding(false);
