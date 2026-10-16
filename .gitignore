@@ -23,3 +23,8 @@ next-env.d.ts
 *.tsbuildinfo
 .DS_Store
 coverage/
+
+# Impeccable (ติดตั้งด้วย npx skills add — เฉพาะเครื่องนี้ ไม่ deploy)
+/.agents/
+/.claude/skills/impeccable
+/skills-lock.json

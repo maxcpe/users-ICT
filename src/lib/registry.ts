@@ -309,7 +309,7 @@ export async function countHolders(system: SystemDef, db: Db = prisma): Promise<
  */
 export async function listHoldersPage(
   system: SystemDef,
-  opts: { q?: string; branch?: string; level: "all" | "other" | number; offset: number; limit: number },
+  opts: { q?: string; filter?: StaffFilter; level: "all" | "other" | number; offset: number; limit: number },
 ): Promise<{ rows: Holder[]; total: number }> {
   const where: Prisma.Sql[] = [NOT_STUDENT];
   const q = opts.q?.trim();
@@ -317,7 +317,7 @@ export async function listHoldersPage(
     const like = `%${escapeLike(q)}%`;
     where.push(Prisma.sql`(u.U_name LIKE ${like} OR u.U_email LIKE ${like})`);
   }
-  if (opts.branch) where.push(Prisma.sql`TRIM(u.U_branch) = ${opts.branch}`);
+  where.push(...(await filterSql(opts.filter)));
 
   let from: Prisma.Sql;
   let levelExpr: Prisma.Sql;
