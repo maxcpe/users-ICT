@@ -491,7 +491,7 @@ Authorization: Bearer <API key ของเว็บ>
 | เซิร์ฟเวอร์ | Windows SVR-ICT-SERVICE, NSSM service ชื่อ `users`, พอร์ต `3006` (3000–3005 ใช้แล้ว ตรวจอีกครั้งก่อนติดตั้ง) |
 | โฟลเดอร์ | แอป `C:\Web\users`, runner `C:\actions-runner\users` |
 | nginx | `location = /users` และ `location ^~ /users/` → `127.0.0.1:3006` (ต้องมี `^~` เพราะ root ของ server คือ `C:/Web`) |
-| deploy | GitHub Actions: lint, typecheck, test, build → self-hosted runner รัน `deploy\deploy.ps1` |
+| deploy | GitHub Actions (`.github/workflows/deploy.yml`) บน self-hosted runner: lint, typecheck, test, build → `deploy\deploy.ps1` (เวอร์ชันละโฟลเดอร์ใน `releases`, junction `current`, ย้อนกลับเองถ้าเปิดไม่ขึ้น) ขั้นตอนติดตั้งอยู่ที่ `deploy/README.md` |
 
 ### 11.2 ตั้งค่าครั้งแรก (ผู้พัฒนาทำ)
 
