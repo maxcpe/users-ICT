@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { signOut } from "@/auth";
+import { withBasePath } from "@/lib/base-path";
 import type { Actor } from "@/lib/roles";
 import { MobileMenu, NavLinks, type NavItem } from "./mobile-menu";
 
@@ -40,7 +41,7 @@ export function Header({ actor, systems }: { actor: Actor; systems: { key: strin
         <form
           action={async () => {
             "use server";
-            await signOut({ redirectTo: "/login" });
+            await signOut({ redirectTo: withBasePath("/login") });
           }}
         >
           <button type="submit" className="btn btn-sm">ออกจากระบบ</button>

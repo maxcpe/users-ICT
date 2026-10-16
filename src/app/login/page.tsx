@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
+import { withBasePath } from "@/lib/base-path";
 import { loadActor } from "@/lib/access";
 import { isLoginDenyReason, LOGIN_ERROR_TEXT } from "@/lib/login-rules";
 
@@ -35,7 +36,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <form
           action={async () => {
             "use server";
-            await signIn("microsoft-entra-id", { redirectTo: "/" });
+            await signIn("microsoft-entra-id", { redirectTo: withBasePath("/") });
           }}
         >
           <button type="submit" className="btn btn-primary min-h-[52px] w-full text-base">
