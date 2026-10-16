@@ -37,10 +37,10 @@ function Remove-Junction($path) {
 }
 
 function Test-App {
-  # รอให้หน้า login ตอบ (ไม่ใช่ 5xx) ไม่เกิน 60 วินาที
+  # รอให้หน้า login ตอบ (ไม่ใช่ 5xx) ตรวจทุก 0.5 วินาที ไม่เกิน 60 วินาที
   $url = "http://127.0.0.1:$Port$BasePath/login"
-  for ($i = 0; $i -lt 30; $i++) {
-    Start-Sleep -Seconds 2
+  for ($i = 0; $i -lt 120; $i++) {
+    Start-Sleep -Milliseconds 500
     try {
       $req = [System.Net.HttpWebRequest]::Create($url)
       $req.AllowAutoRedirect = $false

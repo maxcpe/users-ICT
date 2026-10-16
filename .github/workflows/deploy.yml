@@ -1,12 +1,20 @@
 # deploy ระบบจัดการผู้ใช้ขึ้น SVR-ICT-SERVICE (spec 11.1)
 # รันบน self-hosted runner ที่เครื่องจริง: ตรวจโค้ด → build → deploy\deploy.ps1
 # ไม่มีความลับใน GitHub: .env อยู่ที่ C:\Web\users\.env บนเซิร์ฟเวอร์เท่านั้น
+#
+# ให้เร็ว: เก็บ node_modules และ .next/cache ไว้ระหว่างรอบ (runner เครื่องเดียว)
+# และข้าม npm ci ถ้า package-lock.json ไม่เปลี่ยน
 name: deploy
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      clean_install:
+        description: "ลบ node_modules แล้วติดตั้งใหม่ทั้งหมด (ใช้เมื่อ build เพี้ยน)"
+        type: boolean
+        default: false
 
 # deploy ทีละครั้ง ไม่ยกเลิกตัวที่กำลังรัน
 concurrency:
@@ -27,24 +35,37 @@ jobs:
     env:
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
+      # clean: false = ไม่ลบไฟล์ที่ git ignore (node_modules, .next/cache, src/generated)
       - uses: actions/checkout@v4
         with:
-          clean: true
+          clean: false
 
-      - name: Node version
-        run: node -v; npm -v
+      # ลบเฉพาะไฟล์ที่ไม่อยู่ใน git และไม่ได้ ignore (กันไฟล์ค้างจากรอบก่อน) แล้วคืนไฟล์ใน git ให้ตรง commit
+      - name: Clean workspace
+        run: |
+          git reset --hard HEAD
+          git clean -ffd
+          if ("${{ inputs.clean_install }}" -eq "true" -and (Test-Path node_modules)) { cmd /c rmdir /s /q node_modules }
 
       - name: Install
-        run: npm ci --no-audit --no-fund
+        run: |
+          $hash = (Get-FileHash package-lock.json -Algorithm SHA256).Hash
+          $stamp = 'node_modules\.package-lock.sha256'
+          if ((Test-Path $stamp) -and ((Get-Content $stamp -Raw).Trim() -eq $hash)) {
+            Write-Host "package-lock.json ไม่เปลี่ยน ข้าม npm ci"
+            npx prisma generate
+          } else {
+            npm ci --no-audit --no-fund --prefer-offline
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            Set-Content -Path $stamp -Value $hash -Encoding ascii
+          }
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Test
-        run: npm test
+      # typecheck อยู่ใน next build แล้ว
+      - name: Lint + Test
+        run: |
+          npm run lint
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm test
 
       # ค่าหลอกสำหรับตอน build เท่านั้น (build ไม่ต่อฐาน) ค่าจริงอ่านจาก C:\Web\users\.env ตอนรัน
       - name: Build
