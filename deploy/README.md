@@ -51,9 +51,10 @@ cd C:\temp\users-ICT
 สคริปต์จะจำกัดสิทธิ์ `.env` ให้อ่านได้เฉพาะ Administrators และ SYSTEM
 
 ### 5. nginx
-1. คัดลอก `deploy\users-proxy.inc` ไปไว้โฟลเดอร์เดียวกับ `nginx.conf`
-2. วางเนื้อหา `deploy\nginx-users.conf` ใน `server { }` ของ service.ict.up.ac.th
-3. `nginx -t` แล้ว `nginx -s reload`
+ไฟล์ `C:\nginx-1.30.2\conf\nginx.conf` (nginx รันเป็น NSSM service ชื่อ `nginx`)
+1. สำรองไฟล์ก่อน แล้ววางเนื้อหา `deploy\nginx-users.conf` ใน `server { listen 443 ssl; … }` ของ service.ict.up.ac.th ต่อจาก location ของ `/evaluation/` ก่อน `location /api_ict/`
+2. `cd C:\nginx-1.30.2` → `.\nginx.exe -t` ต้องผ่านก่อน
+3. `Restart-Service nginx` — `nginx -s reload` ใช้ไม่ได้ (Access is denied) เพราะ service รันด้วยบัญชี SYSTEM ทุกเว็บสะดุดประมาณ 1 วินาที
 
 `C:\Web` เป็น root ของ nginx — สอง location นี้ทำให้ทุก path ใต้ `/users` ไปที่แอป ไม่ใช่ไฟล์ในโฟลเดอร์ (ไม่งั้น `.env` อาจถูกเปิดอ่านได้) ห้ามลบออกโดยไม่ย้ายโฟลเดอร์แอป
 
