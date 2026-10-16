@@ -118,10 +118,8 @@ async function main() {
     // ผู้ดูแลระบบต้องมีระดับ 50 ในระบบ users จึงเข้าระบบนี้ได้ (spec 4.6) ไม่แตะคนที่เป็น 99
     const adminIds = [...new Set((await prisma.systemAdmin.findMany({ select: { userId: true } })).map((a) => a.userId))];
     for (const id of adminIds) {
-      // PK รวม level (spec 2.3): เพิ่มเฉพาะคนที่ยังไม่มีแถว users เลย ไม่งั้นผู้ดูแลกลางจะได้ 99 + 50 ซ้อนกัน
-      await prisma.$executeRaw`INSERT INTO ${T("user_roles")} (U_id, system_key, level)
-        SELECT ${id}, 'users', 50 FROM DUAL
-        WHERE NOT EXISTS (SELECT 1 FROM ${T("user_roles")} r WHERE r.U_id = ${id} AND r.system_key = 'users')`;
+      await prisma.$executeRaw`INSERT INTO ${T("user_roles")} (U_id, system_key, level) VALUES (${id}, 'users', 50)
+        ON DUPLICATE KEY UPDATE level = level`;
     }
     console.warn(`ตั้งผู้ดูแลเริ่มต้น ${assigned} แถว (${adminIds.length} คน) ให้ผู้ดูแลกลางตรวจที่หน้า /systems`);
   } finally {

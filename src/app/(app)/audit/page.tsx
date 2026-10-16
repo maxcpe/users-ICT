@@ -20,7 +20,6 @@ const ACTIONS = [
   ["sensitive.update", "แก้ข้อมูลอ่อนไหว"],
   ["system.clear", "ล้างสิทธิ์ทั้งระบบ"],
   ["system.rename", "เปลี่ยน key"],
-  ["system.multi", "หลายสิทธิ์ต่อคน"],
   ["role.set", "ตั้งสิทธิ์"],
   ["admin.assign", "แต่งตั้งผู้ดูแล"],
   ["admin.revoke", "ถอนผู้ดูแล"],

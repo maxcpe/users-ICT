@@ -98,7 +98,7 @@ CREATE TABLE `user_roles` (
   `U_id` int NOT NULL,
   `system_key` varchar(50) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   `level` int NOT NULL,
-  PRIMARY KEY (`U_id`, `system_key`, `level`),
+  PRIMARY KEY (`U_id`, `system_key`),
   KEY `idx_system_level` (`system_key`, `level`)
 ) ENGINE = InnoDB;
 

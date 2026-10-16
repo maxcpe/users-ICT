@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireActor } from "@/lib/access";
 import { prisma } from "@/lib/db";
 import { AdminManager } from "@/components/admin-manager";
-import { countHolders, getStaffByIds, levelCounts } from "@/lib/registry";
+import { getStaffByIds, levelCounts } from "@/lib/registry";
 import { canViewSystem, isCentral } from "@/lib/roles";
 import { getSystem, listSystemAdmins } from "@/lib/system-repo";
 import { USERS_SYSTEM_KEY } from "@/lib/systems";
@@ -29,8 +29,7 @@ export default async function SystemOverview({ params }: { params: Promise<{ key
   );
 
   // นับในฐาน (GROUP BY) รองรับคนจำนวนมาก
-  // ระบบหลายสิทธิ์ คนหนึ่งอยู่ได้หลายระดับ จึงนับคนแยก (ไม่นับซ้ำ)
-  const holderCount = system.multi ? await countHolders(system) : [...counts.values()].reduce((a, b) => a + b, 0);
+  const holderCount = [...counts.values()].reduce((a, b) => a + b, 0);
   const otherCount = [...counts].filter(([v]) => !system.levels.some((l) => l.value === v)).reduce((a, [, n]) => a + n, 0);
   const top = system.levels[system.levels.length - 1]?.value;
   const max = Math.max(1, ...counts.values());

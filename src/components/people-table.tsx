@@ -7,7 +7,6 @@ import { bulkSetRole } from "@/app/(app)/role-actions";
 import type { Level } from "@/lib/systems";
 import { ConfirmDialog } from "./confirm-dialog";
 import { LevelChip } from "./level-chip";
-import { LevelSetChip } from "./level-multi";
 
 export type PeopleRow = {
   id: number;
@@ -16,14 +15,12 @@ export type PeopleRow = {
   branch: string | null;
   job: string | null;
   roles: Record<string, number | null>;
-  /** ทุกบทบาทต่อระบบ (ระบบหลายสิทธิ์, spec 2.3) */
-  roleSets: Record<string, number[]>;
   centralLevel: number | null;
   inactiveReason: string | null;
   flags: string[];
 };
 
-export type BulkSystem = { key: string; name: string; note: string | null; levels: Level[]; multi?: boolean };
+export type BulkSystem = { key: string; name: string; note: string | null; levels: Level[] };
 
 /** แสดงสิทธิ์ไม่เกินเท่านี้ต่อแถว ที่เหลือเป็น "+n ระบบ" (กดดูครบในหน้ารายคน) */
 const MAX_CHIPS = 4;
@@ -126,11 +123,7 @@ export function PeopleTable({
                         return (
                           <>
                             {held.slice(0, MAX_CHIPS).map(({ s, i }) => (
-                              s.multi ? (
-                                <LevelSetChip key={s.key} levels={s.levels} values={p.roleSets[s.key] ?? []} systemName={s.name} colorIndex={i} />
-                              ) : (
-                                <LevelChip key={s.key} levels={s.levels} value={p.roles[s.key]} systemName={s.name} colorIndex={i} />
-                              )
+                              <LevelChip key={s.key} levels={s.levels} value={p.roles[s.key]} systemName={s.name} colorIndex={i} />
                             ))}
                             {held.length > MAX_CHIPS && (
                               <Link

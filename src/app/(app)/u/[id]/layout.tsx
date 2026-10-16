@@ -6,7 +6,7 @@ import { bangkokToday, deleteBlockers } from "@/lib/lifecycle-rules";
 import { deleteFacts } from "@/lib/lifecycle-service";
 import { loadPerson } from "@/lib/person";
 import { prisma } from "@/lib/db";
-import { getRoleSetsOf } from "@/lib/registry";
+import { getRolesOf } from "@/lib/registry";
 import { isCentral } from "@/lib/roles";
 import { listSystems } from "@/lib/system-repo";
 import { describeLevel, USERS_SYSTEM_KEY } from "@/lib/systems";
@@ -25,20 +25,12 @@ export default async function PersonLayout({ children, params }: { children: Rea
   if (central && !dbNames().userDbReadOnly) {
     const systems = (await listSystems({ includeInactive: true })).filter((s) => s.key !== USERS_SYSTEM_KEY);
     const byKey = new Map(systems.map((s) => [s.key, s]));
-    const roles = await getRoleSetsOf(person.id, systems);
-    // ระบบหลายสิทธิ์แสดงทุกบทบาทคั่นด้วย , (spec 2.3)
-    const line = (key: string, values: number[]) => {
+    const roles = await getRolesOf(person.id, systems);
+    const line = (key: string, v: number) => {
       const s = byKey.get(key)!;
-      const label = values
-        .map((v) => {
-          const d = describeLevel(s.levels, v);
-          return d.kind === "known" ? d.label : `ค่าอื่น (${v})`;
-        })
-        .join(", ");
-      return { key, name: s.name, label, note: s.note };
+      const d = describeLevel(s.levels, v);
+      return { key, name: s.name, label: d.kind === "known" ? d.label : `ค่าอื่น (${v})`, note: s.note };
     };
-    const asLevels = (v: unknown): number[] =>
-      Array.isArray(v) ? v.filter((x): x is number => typeof x === "number") : typeof v === "number" ? [v] : [];
     const savedRaw = (status?.savedRoles ?? {}) as Record<string, unknown>;
     actions = (
       <PersonActions
@@ -48,8 +40,8 @@ export default async function PersonLayout({ children, params }: { children: Rea
         status={state}
         scheduledDate={state === "scheduled" && status ? status.effectiveDate.toISOString().slice(0, 10) : null}
         today={bangkokToday()}
-        roles={Object.entries(roles).flatMap(([k, v]) => (v.length ? [line(k, v)] : []))}
-        saved={Object.entries(savedRaw).flatMap(([k, v]) => (asLevels(v).length && byKey.has(k) ? [line(k, asLevels(v))] : []))}
+        roles={Object.entries(roles).flatMap(([k, v]) => (v === null ? [] : [line(k, v)]))}
+        saved={Object.entries(savedRaw).flatMap(([k, v]) => (typeof v === "number" && byKey.has(k) ? [line(k, v)] : []))}
         deleteBlockers={deleteBlockers(await deleteFacts(prisma, person.id))}
         isSelf={person.id === actor.userId}
       />

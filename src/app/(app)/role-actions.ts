@@ -14,7 +14,7 @@ export type ActionResult = { ok: true; message: string } | { ok: false; error: s
 
 const id = z.number().int().positive();
 const level = z.number().int().min(1).max(999).nullable();
-const changeSchema = z.object({ userId: id, systemKey: z.string().max(50), value: level, levels: z.array(z.number().int().min(1).max(999)).max(50).optional() });
+const changeSchema = z.object({ userId: id, systemKey: z.string().max(50), value: level });
 
 function refresh() {
   revalidatePath("/", "layout");
@@ -37,7 +37,6 @@ export async function bulkSetRole(input: unknown): Promise<ActionResult> {
   const parsed = z.object({ systemKey: z.string().max(50), value: level, userIds: z.array(id).min(1).max(500) }).safeParse(input);
   if (!parsed.success) return { ok: false, error: "ข้อมูลไม่ถูกต้อง โหลดหน้าใหม่แล้วลองอีกครั้ง" };
   const { systemKey, value, userIds } = parsed.data;
-  if ((await getSystem(systemKey))?.multi) return { ok: false, error: "ระบบหลายสิทธิ์ตั้งหลายคนได้ที่หน้าผู้ใช้ของระบบนั้น" };
   const r = await applyRoleChanges(
     actor,
     userIds.map((userId) => ({ userId, systemKey, value })),
@@ -127,11 +126,9 @@ export async function addAllMatching(input: unknown): Promise<ActionResult> {
   const ids = await searchStaffIds(search, ADD_ALL_MAX);
   if (ids.length === 0) return { ok: false, error: "ไม่มีใครตรงกับเงื่อนไข" };
   if (ids.length > ADD_ALL_MAX) return { ok: false, error: `ตรงเงื่อนไขเกิน ${ADD_ALL_MAX} คน กรองให้แคบลงก่อน` };
-  const multi = (await getSystem(rest.systemKey))?.multi ?? false;
   const r = await applyRoleChanges(
     actor,
-    // คนกลุ่มนี้ยังไม่มีสิทธิ์ ระบบหลายสิทธิ์จึงได้บทบาทเดียวคือ value
-    ids.map((userId) => (multi ? { userId, systemKey: rest.systemKey, value: null, levels: [value] } : { userId, systemKey: rest.systemKey, value })),
+    ids.map((userId) => ({ userId, systemKey: rest.systemKey, value })),
     { skipDeactivated: true },
   );
   if (!r.ok) return r;

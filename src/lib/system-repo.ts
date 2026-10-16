@@ -18,7 +18,6 @@ export function toSystemDef(s: System): SystemDef {
     unconfirmed: s.unconfirmed,
     active: s.active,
     sortOrder: s.sortOrder,
-    multi: s.multi && s.storage === "table",
   };
 }
 

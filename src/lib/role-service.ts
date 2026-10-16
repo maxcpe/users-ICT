@@ -3,8 +3,8 @@ import "server-only";
 
 import { writeAudit } from "./audit";
 import { prisma, type Tx } from "./db";
-import { getStaffByIds, readRoleForUpdate, readRoleSetForUpdate, ReadOnlyUserDbError, writeRole, writeRoleSet, type SystemDef } from "./registry";
-import { checkRoleChange, normalizeLevels, ROLE_REASON_TEXT, type RoleChange } from "./role-rules";
+import { getStaffByIds, readRoleForUpdate, ReadOnlyUserDbError, writeRole, type SystemDef } from "./registry";
+import { checkRoleChange, ROLE_REASON_TEXT, type RoleChange } from "./role-rules";
 import { CENTRAL_LEVEL, isCentral, SYSTEM_ADMIN_LEVEL, type Actor } from "./roles";
 import { listSystems } from "./system-repo";
 import { USERS_SYSTEM_KEY } from "./systems";
@@ -44,10 +44,7 @@ export async function applyRoleChanges(
           skipped++;
           continue;
         }
-        const exists = !!system && staff.has(change.userId);
-        const multi = !!system?.multi;
-        const currentSet = exists && multi ? await readRoleSetForUpdate(tx, system!, change.userId) : [];
-        const current = exists && !multi ? await readRoleForUpdate(tx, system!, change.userId) : null;
+        const current = system && staff.has(change.userId) ? await readRoleForUpdate(tx, system, change.userId) : null;
         const check = checkRoleChange({
           actor,
           change,
@@ -55,24 +52,10 @@ export async function applyRoleChanges(
           targetExists: staff.has(change.userId),
           targetInactive: inactive.has(change.userId),
           current,
-          currentSet,
         });
         if (!check.ok) throw new RoleError(`U_id ${change.userId}: ${ROLE_REASON_TEXT[check.reason]}`);
         if (check.kind === "same") {
           unchanged++;
-          continue;
-        }
-        if (multi) {
-          const next = normalizeLevels(change.levels!);
-          await writeRoleSet(tx, system!, change.userId, next);
-          await writeAudit(tx, {
-            actorId: actor.userId,
-            action: "role.set",
-            targetId: change.userId,
-            systemKey: change.systemKey,
-            changes: { levels: [currentSet, next] },
-          });
-          changed++;
           continue;
         }
         await writeRole(tx, system!, change.userId, change.value);

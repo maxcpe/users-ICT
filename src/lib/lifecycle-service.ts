@@ -8,20 +8,16 @@ import { prisma, type Tx } from "./db";
 import { bangkokToday, checkDeactivate, deleteBlockers, isScheduled } from "./lifecycle-rules";
 import {
   clearSystemRoles,
-  countMultiHolders,
   countTableRoles,
   deleteStaffRow,
   getStaffByIds,
   listHolders,
-  moveColumnToRoles,
   nonNullRoleColumns,
   readRoleForUpdate,
-  readRoleSetForUpdate,
   readStaffForUpdate,
   ReadOnlyUserDbError,
   renameRolesKey,
   writeRole,
-  writeRoleSet,
 } from "./registry";
 import { syncUsersLevel, usersSystem } from "./role-service";
 import { CENTRAL_LEVEL, isCentral, type Actor } from "./roles";
@@ -54,16 +50,8 @@ async function otherActiveCentrals(tx: Tx, excludeId: number): Promise<number> {
 /** ขั้นตอนปิดใช้งานจริง: เก็บสิทธิ์เดิม ล้างทุกระบบ ถอนผู้ดูแล (spec 4.5 ข้อ 2–4) */
 async function applyDeactivation(tx: Tx, actorId: number, userId: number, reason: string, effectiveDate: string) {
   const systems = await listSystems({ includeInactive: true });
-  // ระบบปกติเก็บเป็นตัวเลข ระบบหลายสิทธิ์เก็บเป็น array ของทุกบทบาท (spec 2.3)
-  const saved: Record<string, number | number[]> = {};
+  const saved: Record<string, number> = {};
   for (const s of systems) {
-    if (s.multi) {
-      const set = await readRoleSetForUpdate(tx, s, userId);
-      if (!set.length) continue;
-      saved[s.key] = set;
-      await writeRoleSet(tx, s, userId, []);
-      continue;
-    }
     const v = await readRoleForUpdate(tx, s, userId);
     if (v === null) continue;
     saved[s.key] = v;
@@ -146,25 +134,15 @@ export async function reactivate(actor: Actor, userId: number, restoreKeys: stri
 
       const saved = (status.savedRoles ?? {}) as Record<string, unknown>;
       const systems = new Map((await listSystems({ includeInactive: true })).map((s) => [s.key, s]));
-      const restored: Record<string, number | number[]> = {};
+      const restored: Record<string, number> = {};
       for (const key of restoreKeys) {
         const value = saved[key];
         const system = systems.get(key);
         // บทบาทในระบบนี้ (users) และผู้ดูแล ไม่คืนอัตโนมัติ ต้องแต่งตั้งใหม่ (spec 4.6)
-        if (key === USERS_SYSTEM_KEY || key === "_admins" || !system) continue;
-        const levels = Array.isArray(value) ? value.filter((v): v is number => typeof v === "number") : typeof value === "number" ? [value] : [];
-        if (!levels.length) continue;
-        if (system.multi) {
-          // ระบบเปลี่ยนเป็นหลายสิทธิ์ระหว่างปิดใช้งานก็คืนได้ (ค่าเดียวกลายเป็นบทบาทเดียว)
-          if ((await readRoleSetForUpdate(tx, system, userId)).length) continue; // มีค่าใหม่แล้ว ไม่ทับ
-          await writeRoleSet(tx, system, userId, levels);
-          restored[key] = levels;
-          continue;
-        }
+        if (key === USERS_SYSTEM_KEY || key === "_admins" || typeof value !== "number" || !system) continue;
         if ((await readRoleForUpdate(tx, system, userId)) !== null) continue; // มีค่าใหม่แล้ว ไม่ทับ
-        const single = Math.max(...levels); // ระบบปิดหลายสิทธิ์ระหว่างนั้น: คืนระดับสูงสุด
-        await writeRole(tx, system, userId, single);
-        restored[key] = single;
+        await writeRole(tx, system, userId, value);
+        restored[key] = value;
       }
       await tx.userStatus.update({ where: { userId }, data: { status: "active", savedRoles: {}, changedBy: actor.userId, changedAt: new Date() } });
       await writeAudit(tx, { actorId: actor.userId, action: "user.reactivate", targetId: userId, changes: { restored } });
@@ -225,10 +203,8 @@ export async function clearSystem(actor: Actor, key: string, confirmation: strin
   return guarded(() =>
     prisma.$transaction(
       async (tx) => {
-        const holders = await listHolders(system, tx);
-        const before = Object.fromEntries(holders.map((h) => [h.id, system.multi ? h.levels : h.level]));
-        await clearSystemRoles(tx, system);
-        const cleared = holders.length;
+        const before = Object.fromEntries((await listHolders(system, tx)).map((h) => [h.id, h.level]));
+        const cleared = await clearSystemRoles(tx, system);
         const admins = await tx.systemAdmin.findMany({ where: { systemKey: key }, select: { userId: true } });
         await tx.systemAdmin.deleteMany({ where: { systemKey: key } });
         for (const a of admins) await syncUsersLevel(tx, actor, a.userId);
@@ -277,7 +253,6 @@ export async function renameSystemKey(actor: Actor, oldKey: string, newKeyRaw: s
           unconfirmed: old.unconfirmed,
           active: old.active,
           sortOrder: old.sortOrder,
-          multi: old.multi,
         },
       });
       const admins = await tx.systemAdmin.updateMany({ where: { systemKey: oldKey }, data: { systemKey: newKey } });
@@ -292,47 +267,4 @@ export async function renameSystemKey(actor: Actor, oldKey: string, newKeyRaw: s
       return { ok: true as const, message: `เปลี่ยน key เป็น ${newKey} แล้ว`, key: newKey };
     }),
   ) as Promise<Result & { key?: string }>;
-}
-
-/**
- * เปิด/ปิด "หลายสิทธิ์ต่อคน" (spec 2.3) — ผู้ดูแลกลาง ต้องพิมพ์ key ยืนยัน
- * เปิด: ระบบแบบ column ย้ายค่าทั้งหมดไป user_roles แล้วตั้งคอลัมน์เดิมเป็น NULL (ไม่เขียนคอลัมน์เดิมอีก)
- * ปิด: ได้เฉพาะเมื่อไม่มีใครถือมากกว่า 1 บทบาท และคงเก็บใน user_roles
- */
-export async function setMultiRoles(actor: Actor, key: string, enable: boolean, confirmation: string): Promise<Result> {
-  if (!isCentral(actor)) return { ok: false, error: "เฉพาะผู้ดูแลกลาง" };
-  if (key === USERS_SYSTEM_KEY) return { ok: false, error: "ระบบนี้เป็นแบบระดับเดียวเสมอ" };
-  if (confirmation.trim() !== key) return { ok: false, error: "key ที่พิมพ์ไม่ตรง" };
-  const system = (await listSystems({ includeInactive: true })).find((s) => s.key === key);
-  if (!system) return { ok: false, error: "ไม่พบระบบนี้" };
-  if (system.multi === enable) return { ok: true, message: enable ? "เปิดอยู่แล้ว" : "ปิดอยู่แล้ว" };
-
-  return guarded(() =>
-    prisma.$transaction(
-      async (tx) => {
-        if (!enable) {
-          const multiHolders = await countMultiHolders(system, tx);
-          if (multiHolders > 0) throw new StopError(`ปิดไม่ได้: มี ${multiHolders} คนถือมากกว่า 1 บทบาท ถอนให้เหลือคนละบทบาทก่อน`);
-          await tx.system.update({ where: { key }, data: { multi: false } });
-          await writeAudit(tx, { actorId: actor.userId, action: "system.multi", systemKey: key, changes: { multi: false } });
-          return { ok: true as const, message: "ปิดหลายสิทธิ์ต่อคนแล้ว (ยังเก็บในตารางกลาง)" };
-        }
-        const fromColumn = system.storage === "column" ? system.columnName : null;
-        const moved = await moveColumnToRoles(tx, system);
-        await tx.system.update({ where: { key }, data: { multi: true, storage: "table" } });
-        await writeAudit(tx, {
-          actorId: actor.userId,
-          action: "system.multi",
-          systemKey: key,
-          changes: { multi: true, fromColumn, moved } as Prisma.InputJsonValue,
-        });
-        const n = Object.keys(moved).length;
-        return {
-          ok: true as const,
-          message: fromColumn ? `เปิดหลายสิทธิ์ต่อคนแล้ว ย้ายสิทธิ์ ${n} คนไปตารางกลาง และล้าง ${fromColumn}` : "เปิดหลายสิทธิ์ต่อคนแล้ว",
-        };
-      },
-      { timeout: 30_000 },
-    ),
-  );
 }

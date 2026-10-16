@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireCentral } from "@/lib/access";
 import { DEACTIVATE_REASONS } from "@/lib/lifecycle-rules";
-import { clearSystem, deactivate, deleteStaff, reactivate, renameSystemKey, setMultiRoles, type Result } from "@/lib/lifecycle-service";
+import { clearSystem, deactivate, deleteStaff, reactivate, renameSystemKey, type Result } from "@/lib/lifecycle-service";
 import { checkIdcard, revealSensitive, setIdcard, updateSensitiveField } from "@/lib/sensitive-service";
 
 const id = z.number().int().positive();
@@ -44,14 +44,6 @@ export async function deleteAction(userId: number, confirmation: string): Promis
 export async function clearSystemAction(key: string, confirmation: string): Promise<Result> {
   const actor = await requireCentral();
   const r = await clearSystem(actor, String(key), String(confirmation ?? ""));
-  if (r.ok) refresh();
-  return r;
-}
-
-/** เปิด/ปิดหลายสิทธิ์ต่อคน (spec 2.3) ต้องพิมพ์ key ยืนยัน */
-export async function setMultiRolesAction(key: string, enable: boolean, confirmation: string): Promise<Result> {
-  const actor = await requireCentral();
-  const r = await setMultiRoles(actor, String(key), enable === true, String(confirmation ?? ""));
   if (r.ok) refresh();
   return r;
 }

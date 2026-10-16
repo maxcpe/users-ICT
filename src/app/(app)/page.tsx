@@ -140,9 +140,8 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
       ) : (
         <PeopleTable
           selfId={actor.userId}
-          systems={visible.map((s) => ({ key: s.key, name: s.name, note: s.note, levels: s.levels, multi: s.multi }))}
-          // ระบบหลายสิทธิ์ตั้งหลายคนที่หน้าผู้ใช้ของระบบ (เพิ่ม/ถอนบทบาท) ไม่ใช่ที่นี่
-          bulkKeys={visible.filter((s) => !s.multi && !(dbNames().userDbReadOnly && s.storage === "column")).map((s) => s.key)}
+          systems={visible.map((s) => ({ key: s.key, name: s.name, note: s.note, levels: s.levels }))}
+          bulkKeys={visible.filter((s) => !(dbNames().userDbReadOnly && s.storage === "column")).map((s) => s.key)}
           rows={rows.map((p) => ({
             id: p.id,
             name: p.name ?? "—",
@@ -150,7 +149,6 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
             branch: blankToNull(p.branch),
             job: blankToNull(p.job),
             roles: p.roles,
-            roleSets: p.roleSets,
             centralLevel: p.roles[USERS_SYSTEM_KEY] ?? null,
             inactiveReason: inactive.get(p.id) ?? null,
             flags: [

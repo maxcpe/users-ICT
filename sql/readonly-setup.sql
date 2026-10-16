@@ -17,15 +17,14 @@ CREATE TABLE IF NOT EXISTS `usermanagement_dev`.`user_roles` (
   `U_id` int NOT NULL,
   `system_key` varchar(50) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   `level` int NOT NULL,
-  PRIMARY KEY (`U_id`, `system_key`, `level`),
+  PRIMARY KEY (`U_id`, `system_key`),
   KEY `idx_system_level` (`system_key`, `level`)
 ) ENGINE = InnoDB;
 
 -- ผู้ดูแลกลาง: ผู้พัฒนา
--- PK รวม level (spec 2.3): ล้างแถว users เดิมของคนนี้ก่อน ให้เหลือ 99 แถวเดียว
-DELETE r FROM `usermanagement_dev`.`user_roles` r JOIN (SELECT U_id FROM `user`.`user` WHERE LOWER(TRIM(U_email)) = '<อีเมลผู้ดูแลกลาง>') t ON t.U_id = r.U_id WHERE r.system_key = 'users';
 INSERT INTO `usermanagement_dev`.`user_roles` (U_id, system_key, level)
-SELECT U_id, 'users', 99 FROM `user`.`user` WHERE LOWER(TRIM(U_email)) = '<อีเมลผู้ดูแลกลาง>';
+SELECT U_id, 'users', 99 FROM `user`.`user` WHERE LOWER(TRIM(U_email)) = '<อีเมลผู้ดูแลกลาง>'
+ON DUPLICATE KEY UPDATE level = 99;
 
 -- จากนั้นในเครื่องพัฒนา:
 -- .env:
