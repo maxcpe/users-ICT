@@ -35,7 +35,7 @@ export function AdminManager({
       setSearching(true);
       const r = await searchStaffAction({ q, forAdmin: true });
       if (!cancelled) {
-        setHits(r);
+        setHits(r.hits);
         setSearching(false);
       }
     }, 250);

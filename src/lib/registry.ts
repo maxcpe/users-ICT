@@ -349,7 +349,9 @@ export async function listHoldersPage(
  * ค้นหาบุคลากร (ชื่อ อีเมล หรือสังกัด) จำกัดจำนวน — ใช้กับช่องเพิ่มคนและแต่งตั้งผู้ดูแล
  * withoutRoleIn: ตัดคนที่มีสิทธิ์ในระบบนั้นอยู่แล้วออก
  */
-export async function searchStaff(opts: { q: string; withoutRoleIn?: SystemDef; limit: number }): Promise<StaffRow[]> {
+export type StaffSearch = { q: string; withoutRoleIn?: SystemDef; filter?: StaffFilter };
+
+async function searchWhere(opts: StaffSearch): Promise<Prisma.Sql> {
   const where: Prisma.Sql[] = [NOT_STUDENT];
   const q = opts.q.trim();
   if (q) {
@@ -361,9 +363,25 @@ export async function searchStaff(opts: { q: string; withoutRoleIn?: SystemDef; 
     if (s.storage === "column") where.push(Prisma.sql`${await roleColumn(s.columnName ?? "")} IS NULL`);
     else where.push(Prisma.sql`NOT EXISTS (SELECT 1 FROM ${table("user_roles")} r WHERE r.U_id = u.U_id AND r.system_key = ${s.key})`);
   }
-  const rows = await prisma.$queryRaw<StaffRow[]>`SELECT ${STAFF_COLS} FROM ${table("user")} u
-    WHERE ${Prisma.join(where, " AND ")} ORDER BY u.U_name, u.U_id LIMIT ${opts.limit}`;
-  return rows.map((r) => ({ ...r, id: Number(r.id) }));
+  where.push(...(await filterSql(opts.filter)));
+  return Prisma.join(where, " AND ");
+}
+
+/** ค้นหาพร้อมจำนวนทั้งหมดที่ตรง (rows จำกัดตาม limit, total นับในฐาน) */
+export async function searchStaff(opts: StaffSearch & { limit: number }): Promise<{ rows: StaffRow[]; total: number }> {
+  const w = await searchWhere(opts);
+  const [rows, count] = await Promise.all([
+    prisma.$queryRaw<StaffRow[]>`SELECT ${STAFF_COLS} FROM ${table("user")} u WHERE ${w} ORDER BY u.U_name, u.U_id LIMIT ${opts.limit}`,
+    prisma.$queryRaw<{ n: bigint }[]>`SELECT COUNT(*) AS n FROM ${table("user")} u WHERE ${w}`,
+  ]);
+  return { rows: rows.map((r) => ({ ...r, id: Number(r.id) })), total: Number(count[0]?.n ?? 0) };
+}
+
+/** U_id ทุกคนที่ตรงเงื่อนไข (สำหรับ "เพิ่มทั้งหมด") ดึงไม่เกิน cap+1 เพื่อรู้ว่าเกินหรือไม่ */
+export async function searchStaffIds(opts: StaffSearch, cap: number): Promise<number[]> {
+  const w = await searchWhere(opts);
+  const rows = await prisma.$queryRaw<{ id: unknown }[]>`SELECT u.U_id AS id FROM ${table("user")} u WHERE ${w} ORDER BY u.U_id LIMIT ${cap + 1}`;
+  return rows.map((r) => Number(r.id));
 }
 
 // ---------- อ่าน/เขียนสิทธิ์ (ใช้ผ่าน role-service.ts เท่านั้น) ----------

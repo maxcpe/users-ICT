@@ -29,7 +29,7 @@ export default async function SystemPeople({ params, searchParams }: { params: P
   const branch = (sp.branch ?? "").trim();
   const requested = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
 
-  const [counts, branches] = await Promise.all([levelCounts(system), distinctValues("U_branch")]);
+  const [counts, branches, jobs] = await Promise.all([levelCounts(system), distinctValues("U_branch"), distinctValues("U_job")]);
   const total = [...counts.values()].reduce((a, b) => a + b, 0);
   const countOf = (v: number) => counts.get(v) ?? 0;
   const otherCount = [...counts].filter(([v]) => !system.levels.some((l) => l.value === v)).reduce((a, [, n]) => a + n, 0);
@@ -115,6 +115,8 @@ export default async function SystemPeople({ params, searchParams }: { params: P
         system={{ key, name: system.name, note: system.note, levels: system.levels }}
         rows={rows}
         canAdd={key !== USERS_SYSTEM_KEY && !readOnly}
+        branches={branches}
+        jobs={jobs}
       />
       <Pager page={page} pages={pages} href={(p) => href({ page: String(p) })} total={matched} />
     </>

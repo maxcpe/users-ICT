@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { saveRoles, searchStaffAction, type StaffHit } from "@/app/(app)/role-actions";
+import { addAllMatching, saveRoles, searchStaffAction, type StaffHit } from "@/app/(app)/role-actions";
 import { describeLevel, type Level } from "@/lib/systems";
 import { ConfirmDialog, type Impact } from "./confirm-dialog";
 import { LevelChip } from "./level-chip";
@@ -29,14 +29,26 @@ const label = (levels: Level[], v: number | null) => {
  * ตารางสิทธิ์ของระบบเดียว รับเฉพาะแถวของหน้าปัจจุบัน (ค้นหา/กรอง/แบ่งหน้าที่ server ผ่าน URL)
  * การเปลี่ยนที่ยังไม่บันทึกจำไว้ข้ามหน้า และแสดงไว้บนสุดของตาราง
  */
+const LINES = [
+  ["", "ทุกสาย"],
+  ["academic", "สายวิชาการ"],
+  ["support", "สายสนับสนุน"],
+] as const;
+type Line = (typeof LINES)[number][0];
+
 export function SystemRoleEditor({
   system,
   rows,
   canAdd = true,
+  branches = [],
+  jobs = [],
 }: {
   system: { key: string; name: string; note: string | null; levels: Level[] };
   rows: EditableRow[];
   canAdd?: boolean;
+  /** ตัวเลือกตัวกรองของช่องเพิ่มคน */
+  branches?: string[];
+  jobs?: string[];
 }) {
   const router = useRouter();
   // userId → แถวเดิม (ค่าก่อนแก้) + ค่าใหม่
@@ -45,7 +57,12 @@ export function SystemRoleEditor({
   const [q, setQ] = useState("");
   const [picked, setPicked] = useState<Map<number, Candidate>>(new Map());
   const [hits, setHits] = useState<Candidate[]>([]);
+  const [total, setTotal] = useState(0);
   const [searching, setSearching] = useState(false);
+  const [fLine, setFLine] = useState<Line>("");
+  const [fBranch, setFBranch] = useState("");
+  const [fJob, setFJob] = useState("");
+  const [confirmAll, setConfirmAll] = useState(false);
   const [addLevel, setAddLevel] = useState<number>(system.levels[0]?.value ?? 0);
   const [confirm, setConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,9 +94,10 @@ export function SystemRoleEditor({
     let cancelled = false;
     const t = setTimeout(async () => {
       setSearching(true);
-      const r = await searchStaffAction({ q, systemKey: system.key });
+      const r = await searchStaffAction({ q, systemKey: system.key, line: fLine, branch: fBranch, job: fJob });
       if (!cancelled) {
-        setHits(r);
+        setHits(r.hits);
+        setTotal(r.total);
         setSearching(false);
       }
     }, 250);
@@ -87,7 +105,8 @@ export function SystemRoleEditor({
       cancelled = true;
       clearTimeout(t);
     };
-  }, [q, adding, system.key]);
+  }, [q, adding, system.key, fLine, fBranch, fJob]);
+  const filtered = !!(q.trim() || fLine || fBranch || fJob);
   const shown = hits.filter((c) => !pending.has(c.id));
   const allShownPicked = shown.length > 0 && shown.every((c) => picked.has(c.id));
   const togglePick = (c: Candidate, on: boolean) =>
@@ -124,6 +143,35 @@ export function SystemRoleEditor({
           <label htmlFor="add-q" className="label">ค้นหาบุคลากรที่ยังไม่มีสิทธิ์ใน{system.name} (ชื่อ อีเมล หรือสังกัด)</label>
           <input id="add-q" className="input mt-1.5" value={q} onChange={(e) => setQ(e.target.value)} placeholder="เช่น วิทยาการคอมพิวเตอร์" autoFocus />
 
+          <div className="mt-2 flex flex-wrap items-end gap-2.5">
+            <div className="grid min-w-[150px] flex-1 gap-1">
+              <label htmlFor="add-line" className="small">สาย</label>
+              <select id="add-line" className="input" value={fLine} onChange={(e) => setFLine(e.target.value as Line)}>
+                {LINES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </div>
+            <div className="grid min-w-[180px] flex-[2_1_180px] gap-1">
+              <label htmlFor="add-branch" className="small">สังกัด</label>
+              <select id="add-branch" className="input" value={fBranch} onChange={(e) => setFBranch(e.target.value)}>
+                <option value="">ทุกสังกัด</option>
+                {branches.map((b) => <option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
+            <div className="grid min-w-[180px] flex-[2_1_180px] gap-1">
+              <label htmlFor="add-job" className="small">งาน</label>
+              <select id="add-job" className="input" value={fJob} onChange={(e) => setFJob(e.target.value)}>
+                <option value="">ทุกงาน</option>
+                {jobs.map((j) => <option key={j} value={j}>{j}</option>)}
+              </select>
+            </div>
+            {filtered && (
+              <button type="button" className="btn" onClick={() => { setQ(""); setFLine(""); setFBranch(""); setFJob(""); }}>ล้าง</button>
+            )}
+          </div>
+          <p className="small mb-0 mt-2" aria-live="polite">
+            {searching ? "กำลังค้นหา…" : `พบ ${total.toLocaleString("th-TH")} คนที่ยังไม่มีสิทธิ์${filtered ? "และตรงกับเงื่อนไข" : ""}`}
+          </p>
+
           <label className="mt-2 flex min-h-11 items-center gap-3 border-b border-[#ffffff14] pb-1">
             <input
               type="checkbox"
@@ -159,8 +207,8 @@ export function SystemRoleEditor({
               </li>
             ))}
           </ul>
-          {!searching && hits.length >= 50 && (
-            <p className="small mb-0 mt-1">แสดง 50 คนแรก พิมพ์ให้เจาะจงขึ้น (ค้นใหม่ได้ คนที่เลือกไว้ยังอยู่)</p>
+          {!searching && total > hits.length && (
+            <p className="small mb-0 mt-1">แสดง {hits.length} คนแรกจาก {total.toLocaleString("th-TH")} คน · เลือกทีละคนได้ หรือใช้ปุ่ม &quot;เพิ่มทั้งหมด&quot; ด้านล่าง</p>
           )}
 
           <div className="mt-3 flex flex-wrap items-center gap-2.5">
@@ -169,10 +217,21 @@ export function SystemRoleEditor({
               {system.levels.map((l) => <option key={l.value} value={l.value}>{l.label} ({l.value})</option>)}
             </select>
             <button type="button" className="btn btn-primary" disabled={picked.size === 0} onClick={addPicked}>
-              เพิ่ม {picked.size} คนเป็น{addLevelLabel}
+              เพิ่ม {picked.size} คนที่เลือกเป็น{addLevelLabel}
+            </button>
+            <button
+              type="button"
+              className="btn btn-cyan"
+              disabled={searching || total === 0 || total > 500 || pending.size > 0}
+              title={pending.size > 0 ? "บันทึกหรือยกเลิกการเปลี่ยนที่ค้างอยู่ก่อน" : total > 500 ? "เกิน 500 คน กรองให้แคบลง" : undefined}
+              onClick={() => { setError(null); setConfirmAll(true); }}
+            >
+              เพิ่มทั้งหมด {total.toLocaleString("th-TH")} คนเป็น{addLevelLabel}
             </button>
           </div>
-          <p className="small mb-0 mt-2">ยังไม่บันทึกจนกว่าจะกด &quot;บันทึก&quot; ที่แถบด้านล่าง</p>
+          <p className="small mb-0 mt-2">
+            &quot;เพิ่มคนที่เลือก&quot; ยังไม่บันทึกจนกว่าจะกด &quot;บันทึก&quot; ที่แถบด้านล่าง · &quot;เพิ่มทั้งหมด&quot; บันทึกทันทีหลังยืนยัน (ไม่เกิน 500 คนต่อครั้ง)
+          </p>
         </div>
       )}
 
@@ -254,6 +313,37 @@ export function SystemRoleEditor({
             setConfirm(false);
             setPending(new Map());
             setAdding(false);
+            setMessage(r.message);
+            router.refresh();
+          })
+        }
+      />
+
+      <ConfirmDialog
+        open={confirmAll}
+        tone="cyan"
+        title={`เพิ่ม ${total.toLocaleString("th-TH")} คนเป็น${addLevelLabel}ใน${system.name}?`}
+        description={system.note ?? undefined}
+        impacts={[
+          { label: `ได้สิทธิ์ "${addLevelLabel}"`, value: `${total.toLocaleString("th-TH")} คน`, tone: "count" },
+          ...(q.trim() ? [{ label: "คำค้น", value: q.trim(), tone: "muted" as const }] : []),
+          ...(fLine ? [{ label: "สาย", value: LINES.find(([v]) => v === fLine)?.[1] ?? "", tone: "muted" as const }] : []),
+          ...(fBranch ? [{ label: "สังกัด", value: fBranch, tone: "muted" as const }] : []),
+          ...(fJob ? [{ label: "งาน", value: fJob, tone: "muted" as const }] : []),
+          ...(!filtered ? [{ label: "ไม่ได้กรอง", value: "ทุกคนที่ยังไม่มีสิทธิ์", tone: "now" as const }] : []),
+          { label: "คนที่ปิดใช้งานและตัวท่านเอง", value: "ข้าม", tone: "muted" },
+        ]}
+        confirmLabel={`ยืนยัน ${total.toLocaleString("th-TH")} คน`}
+        busy={busy}
+        error={error}
+        onClose={() => setConfirmAll(false)}
+        onConfirm={() =>
+          start(async () => {
+            const r = await addAllMatching({ q, systemKey: system.key, line: fLine, branch: fBranch, job: fJob, value: addLevel });
+            if (!r.ok) return setError(r.error);
+            setConfirmAll(false);
+            setAdding(false);
+            setPicked(new Map());
             setMessage(r.message);
             router.refresh();
           })
