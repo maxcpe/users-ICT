@@ -160,7 +160,7 @@ export function SystemRoleEditor({
           </span>
           <button
             type="button"
-            className="btn btn-sm btn-cyan"
+            className="btn btn-sm btn-cyan max-[820px]:w-full"
             disabled={matched === 0 || addAllBlocked !== null}
             onClick={() => { setError(null); setConfirmAll(true); }}
           >
@@ -170,12 +170,13 @@ export function SystemRoleEditor({
       )}
 
       <div className="glass table-wrap">
-        <table className="table">
+        <table className={`table table-cards${withSelection ? "" : " no-check"}`}>
           <thead>
             <tr>
               {withSelection && (
-                <th scope="col" className="w-11">
+                <th scope="col" className="cell-check w-11">
                   <input
+                    id="select-page"
                     type="checkbox"
                     className="check"
                     aria-label="เลือกทุกคนในหน้านี้"
@@ -183,6 +184,8 @@ export function SystemRoleEditor({
                     disabled={selectable.length === 0}
                     onChange={(e) => setSelected(e.target.checked ? new Map(selectable.map((r) => [r.id, r])) : new Map())}
                   />
+                  {/* มือถือไม่มีหัวตาราง จึงแสดงข้อความกำกับช่องเลือกทั้งหน้า */}
+                  <label htmlFor="select-page" className="small font-normal min-[821px]:hidden">เลือกทุกคนในหน้านี้</label>
                 </th>
               )}
               <th scope="col">ชื่อ</th>
@@ -192,7 +195,7 @@ export function SystemRoleEditor({
           </thead>
           <tbody>
             {visibleRows.length === 0 && (
-              <tr><td colSpan={withSelection ? 4 : 3} className="py-10 text-center text-muted">{emptyText}</td></tr>
+              <tr><td colSpan={withSelection ? 4 : 3} className="cell-empty py-10 text-center text-muted">{emptyText}</td></tr>
             )}
             {visibleRows.map((r) => {
               const p = pending.get(r.id);
@@ -217,10 +220,13 @@ export function SystemRoleEditor({
                       {r.locked === "ท่าน" && <span className="chip chip-cyan">ท่าน</span>}
                       {p && <span className="chip chip-warn">ยังไม่บันทึก</span>}
                     </div>
-                    <div className="sub">{r.email ?? "ไม่มีอีเมล"}</div>
+                    <div className="sub">
+                      {r.email ?? "ไม่มีอีเมล"}
+                      {r.branch && <span className="min-[821px]:hidden"> · {r.branch}</span>}
+                    </div>
                   </td>
                   <td className="hide-sm">{r.branch ?? "—"}</td>
-                  <td>
+                  <td className="cell-role">
                     {r.locked ? (
                       <span className="flex flex-wrap items-center gap-2">
                         <LevelChip levels={system.levels} value={r.level} />

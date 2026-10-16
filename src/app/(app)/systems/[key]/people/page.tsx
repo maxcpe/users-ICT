@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FilterDisclosure } from "@/components/filter-disclosure";
 import { Pager } from "@/components/pager";
 import { SystemRoleEditor, type EditableRow, type PeopleFilter } from "@/components/system-role-editor";
 import { requireActor } from "@/lib/access";
@@ -104,7 +105,7 @@ export default async function SystemPeople({ params, searchParams }: { params: P
   return (
     <>
       <div className="mb-3.5 flex flex-wrap items-center gap-2.5">
-        <nav className="flex flex-wrap gap-2.5" aria-label="กรองตามระดับ">
+        <nav className="pill-strip min-w-0 max-w-full" aria-label="กรองตามระดับ">
           {pill("all", `ทั้งหมด ${total.toLocaleString("th-TH")}`, level === "all")}
           {system.levels.map((l) => (
             <span key={l.value} className="contents">{pill(String(l.value), `${l.label} ${countOf(l.value).toLocaleString("th-TH")}`, level === l.value)}</span>
@@ -113,39 +114,42 @@ export default async function SystemPeople({ params, searchParams }: { params: P
           {canGrant && pill("none", `ไม่มีสิทธิ์ ${noneCount.toLocaleString("th-TH")}`, level === "none")}
         </nav>
         {canEdit && level !== "none" && (
-          <Link href={href({ level: "none", page: "1" })} className="btn btn-primary ml-auto">＋ เพิ่มคน</Link>
+          <Link href={href({ level: "none", page: "1" })} className="btn btn-primary ml-auto max-[820px]:w-full">＋ เพิ่มคน</Link>
         )}
       </div>
 
       {/* ฟอร์ม GET: ตัวกรองชุดเดียวของหน้า เปลี่ยนแล้วกลับไปหน้าแรก */}
       <form role="search" method="get" className="mb-3 flex flex-wrap items-end gap-2.5">
         {levelParam !== "all" && <input type="hidden" name="level" value={levelParam} />}
-        <div className="grid min-w-[200px] flex-[2_1_200px] gap-1">
+        <div className="grid min-w-[200px] flex-[2_1_200px] gap-1 max-[820px]:basis-full">
           <label htmlFor="t-q" className="label">ค้นหา</label>
           <input id="t-q" name="q" className="input" defaultValue={filter.q} placeholder="ชื่อหรืออีเมล…" />
         </div>
-        <div className="grid min-w-[140px] flex-1 gap-1">
+        {/* มือถือยุบสาย/สังกัด/งานไว้ใต้ปุ่ม "ตัวกรอง (n)" ช่องค้นหาแสดงเสมอ */}
+        <FilterDisclosure active={[filter.line, filter.branch, filter.job].filter(Boolean).length}>
+        <div className="grid min-w-[140px] flex-1 gap-1 max-[820px]:basis-full">
           <label htmlFor="t-line" className="label">สาย</label>
           <select id="t-line" name="line" className="input" defaultValue={filter.line}>
             {LINES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </div>
-        <div className="grid min-w-[160px] flex-1 gap-1">
+        <div className="grid min-w-[160px] flex-1 gap-1 max-[820px]:basis-full">
           <label htmlFor="t-branch" className="label">สังกัด</label>
           <select id="t-branch" name="branch" className="input" defaultValue={filter.branch}>
             <option value="">ทุกสังกัด</option>
             {branches.map((b) => <option key={b} value={b}>{b}</option>)}
           </select>
         </div>
-        <div className="grid min-w-[160px] flex-1 gap-1">
+        <div className="grid min-w-[160px] flex-1 gap-1 max-[820px]:basis-full">
           <label htmlFor="t-job" className="label">งาน</label>
           <select id="t-job" name="job" className="input" defaultValue={filter.job}>
             <option value="">ทุกงาน</option>
             {jobs.map((j) => <option key={j} value={j}>{j}</option>)}
           </select>
         </div>
-        <button type="submit" className="btn">กรอง</button>
-        {filtered && <Link href={href({ q: "", line: "", branch: "", job: "", page: "1" })} className="btn">ล้าง</Link>}
+        </FilterDisclosure>
+        <button type="submit" className="btn max-[820px]:flex-1">กรอง</button>
+        {filtered && <Link href={href({ q: "", line: "", branch: "", job: "", page: "1" })} className="btn max-[820px]:flex-1">ล้าง</Link>}
       </form>
 
       <SystemRoleEditor
