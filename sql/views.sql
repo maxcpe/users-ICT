@@ -10,7 +10,8 @@
 -- SQL SECURITY DEFINER: เว็บอื่นได้สิทธิ์ SELECT เฉพาะ view ไม่ต้องอ่านตาราง user_status / systems เอง
 
 CREATE OR REPLACE SQL SECURITY DEFINER VIEW `user`.`v_staff` AS
-SELECT u.U_id, LOWER(TRIM(u.U_email)) AS U_email, u.U_name, u.U_position, u.U_branch
+SELECT u.U_id, LOWER(TRIM(u.U_email)) AS U_email, u.U_name, u.U_position, u.U_branch,
+       u.U_job  -- ต่อท้ายเท่านั้น (ระบบประเมินใช้กรองหน่วยงาน 16 ต.ค. 2569)
 FROM `user`.`user` u
 WHERE (u.U_position IS NULL OR u.U_position NOT LIKE 'นักศึกษา%')
   AND NOT EXISTS (SELECT 1 FROM `user`.`user_status` s

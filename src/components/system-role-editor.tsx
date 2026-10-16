@@ -223,12 +223,28 @@ export function SystemRoleEditor({
               type="button"
               className="btn btn-cyan"
               disabled={searching || total === 0 || total > 500 || pending.size > 0}
-              title={pending.size > 0 ? "บันทึกหรือยกเลิกการเปลี่ยนที่ค้างอยู่ก่อน" : total > 500 ? "เกิน 500 คน กรองให้แคบลง" : undefined}
               onClick={() => { setError(null); setConfirmAll(true); }}
             >
               เพิ่มทั้งหมด {total.toLocaleString("th-TH")} คนเป็น{addLevelLabel}
             </button>
           </div>
+          {/* บอกเหตุผลที่ปุ่ม "เพิ่มทั้งหมด" กดไม่ได้ให้เห็นบนจอ ไม่ซ่อนไว้ใน tooltip */}
+          {pending.size > 0 && (
+            <div className="callout callout-warn mt-3 flex-wrap items-center" role="status">
+              <span aria-hidden="true">⚠</span>
+              <span className="flex-1">
+                มีการเปลี่ยนในตารางที่ยังไม่บันทึก {pending.size} คน — &quot;เพิ่มทั้งหมด&quot; ใช้ได้หลังบันทึกหรือยกเลิกการเปลี่ยนนั้นก่อน
+                (&quot;เพิ่มคนที่เลือก&quot; ใช้ได้ตามปกติ)
+              </span>
+              <span className="flex gap-2">
+                <button type="button" className="btn btn-sm" onClick={() => setPending(new Map())}>ยกเลิกการเปลี่ยน</button>
+                <button type="button" className="btn btn-sm btn-primary" onClick={() => { setError(null); setConfirm(true); }}>บันทึกตอนนี้</button>
+              </span>
+            </div>
+          )}
+          {pending.size === 0 && !searching && total > 500 && (
+            <p className="small mb-0 mt-2 !text-warn-ink">ตรงเงื่อนไข {total.toLocaleString("th-TH")} คน เกิน 500 คนต่อครั้ง — กรองตามสาย สังกัด หรืองานให้แคบลงก่อน</p>
+          )}
           <p className="small mb-0 mt-2">
             &quot;เพิ่มคนที่เลือก&quot; ยังไม่บันทึกจนกว่าจะกด &quot;บันทึก&quot; ที่แถบด้านล่าง · &quot;เพิ่มทั้งหมด&quot; บันทึกทันทีหลังยืนยัน (ไม่เกิน 500 คนต่อครั้ง)
           </p>
