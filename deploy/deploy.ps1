@@ -82,17 +82,28 @@ Copy-Tree $standalone $release
 Copy-Tree (Join-Path $Source '.next\static') (Join-Path $release '.next\static')
 if (Test-Path (Join-Path $Source 'public')) { Copy-Tree (Join-Path $Source 'public') (Join-Path $release 'public') }
 
-# build บน Windows สร้าง junction ที่ชี้ path เต็มของโฟลเดอร์ build (เช่น @prisma/client-xxxx)
-# สร้างใหม่ให้ชี้ไฟล์ในเวอร์ชันนี้ ไม่งั้นจะพังเมื่อ runner ล้างโฟลเดอร์ build
+# build บน Windows สร้างทางลัด (junction หรือ symlink) ใน standalone เช่น @prisma/client-xxxx
+#   - junction: ชี้ path เต็มของโฟลเดอร์ build (เครื่องที่ไม่มีสิทธิ์สร้าง symlink)
+#   - symlink: ชี้ path สัมพัทธ์ เช่น ..\..\..\node_modules\@prisma\client (บัญชี SYSTEM ของ runner)
+# สร้างใหม่เป็น junction ที่ชี้ไฟล์ในเวอร์ชันนี้ ไม่งั้นจะพังเมื่อ runner ล้างโฟลเดอร์ build
 $standaloneFull = (Resolve-Path $standalone).Path.TrimEnd('\')
 Get-ChildItem -Path $standalone -Recurse -Force -Attributes ReparsePoint -ErrorAction SilentlyContinue | ForEach-Object {
   $rel = $_.FullName.Substring($standaloneFull.Length).TrimStart('\')
   $target = @($_.Target)[0]
   if (-not $target) { return }
-  if (-not $target.StartsWith($standaloneFull, [StringComparison]::OrdinalIgnoreCase)) { throw "junction $rel ชี้ออกนอกโฟลเดอร์ build: $target" }
+  if (-not [IO.Path]::IsPathRooted($target)) {
+    $target = [IO.Path]::GetFullPath([IO.Path]::Combine((Split-Path -Parent $_.FullName), $target))
+  }
+  $target = $target.TrimEnd('\')
+  if (-not $target.StartsWith($standaloneFull + '\', [StringComparison]::OrdinalIgnoreCase)) { throw "ทางลัด $rel ชี้ออกนอกโฟลเดอร์ build: $target" }
   $newLink = Join-Path $release $rel
   $newTarget = Join-Path $release ($target.Substring($standaloneFull.Length).TrimStart('\'))
-  if (Test-Path -LiteralPath $newLink) { Remove-Item -LiteralPath $newLink -Recurse -Force }
+  if (-not (Test-Path -LiteralPath $newTarget)) { throw "ไม่พบปลายทางของทางลัด $rel ในเวอร์ชันใหม่: $newTarget" }
+  if (Test-Path -LiteralPath $newLink) {
+    # ถ้า robocopy คัดลอกทางลัดมาเป็นลิงก์ ลบเฉพาะลิงก์ (ห้าม -Recurse ซึ่งอาจลบไฟล์ปลายทาง)
+    if ((Get-Item -LiteralPath $newLink -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) { cmd /c rmdir "$newLink" | Out-Null }
+    else { Remove-Item -LiteralPath $newLink -Recurse -Force }
+  }
   New-Item -ItemType Junction -Path $newLink -Target $newTarget | Out-Null
   Write-Host "    junction $rel -> $newTarget"
 }
