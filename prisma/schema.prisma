@@ -1,0 +1,101 @@
+// ฐานของระบบนี้ (`usermanagement` / `usermanagement_dev`) — spec หัวข้อ 5
+// ตาราง `user`.`user` และ `user`.`user_roles` ไม่อยู่ที่นี่ อ่าน/เขียนผ่าน src/lib/registry.ts
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  // ไม่สร้าง FOREIGN KEY ในฐาน: บัญชีที่ใช้อยู่มีแค่สิทธิ์ CREATE บนฐาน user (ไม่มี ALTER/REFERENCES)
+  // Prisma ตรวจความสัมพันธ์ในโค้ดแทน (9 ต.ค. 2569)
+  relationMode = "prisma"
+}
+
+enum Storage {
+  column
+  table
+}
+
+enum UserStatusKind {
+  active
+  inactive
+  scheduled
+}
+
+/// 5.1 ทะเบียนระบบ
+model System {
+  key         String        @id @db.VarChar(50)
+  storage     Storage
+  /// เฉพาะ storage = column เช่น U_evaluation (ต้องผ่าน allowlist)
+  columnName  String?       @unique @map("column_name") @db.VarChar(64)
+  name        String        @db.VarChar(100)
+  icon        String?       @db.VarChar(16)
+  url         String?       @db.VarChar(255)
+  note        String?       @db.VarChar(255)
+  /// [{ "value": 1, "label": "ผู้ใช้", "description": "…" }] เรียงจากต่ำไปสูง
+  levels      Json
+  /// ยังไม่ได้ยืนยันความหมายของระดับกับเจ้าของระบบ
+  unconfirmed Boolean       @default(false)
+  active      Boolean       @default(true)
+  sortOrder   Int           @default(0) @map("sort_order")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  admins      SystemAdmin[]
+
+  @@map("systems")
+}
+
+/// 5.2 ใครดูแลระบบไหน
+model SystemAdmin {
+  systemKey  String   @map("system_key") @db.VarChar(50)
+  userId     Int      @map("user_id")
+  assignedBy Int      @map("assigned_by")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  system     System   @relation(fields: [systemKey], references: [key], onUpdate: Restrict, onDelete: Restrict)
+
+  @@id([systemKey, userId])
+  @@index([userId])
+  @@map("system_admins")
+}
+
+/// 5.3 สถานะใช้งาน (มีแถวเฉพาะคนที่เคยถูกปิดใช้งาน)
+model UserStatus {
+  userId        Int            @id @map("user_id")
+  status        UserStatusKind
+  reason        String         @db.VarChar(100)
+  effectiveDate DateTime       @map("effective_date") @db.Date
+  savedRoles    Json           @map("saved_roles")
+  changedBy     Int            @map("changed_by")
+  changedAt     DateTime       @default(now()) @map("changed_at")
+
+  @@map("user_status")
+}
+
+/// 5.4 audit log — แอปห้าม UPDATE/DELETE (บังคับด้วยสิทธิ์ฐานข้อมูล)
+model AuditLog {
+  id        BigInt   @id @default(autoincrement())
+  at        DateTime @default(now())
+  actorId   Int      @map("actor_id")
+  targetId  Int?     @map("target_id")
+  systemKey String?  @map("system_key") @db.VarChar(50)
+  action    String   @db.VarChar(40)
+  changes   Json
+  ip        String?  @db.VarChar(45)
+
+  @@index([at])
+  @@index([targetId])
+  @@index([systemKey, at])
+  @@map("audit_log")
+}
+
+/// 5.5 object id ของบัญชี 365 ที่ผูกกับ U_id
+model UserIdentity {
+  userId       Int      @id @map("user_id")
+  oid          String   @unique @db.VarChar(64)
+  firstLoginAt DateTime @default(now()) @map("first_login_at")
+  lastLoginAt  DateTime @default(now()) @map("last_login_at")
+
+  @@map("user_identity")
+}

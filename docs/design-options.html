@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ตัวอย่างหน้าตา · ระบบจัดการผู้ใช้</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&family=Mitr:wght@400;500;600&family=Kanit:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Prompt, sans-serif; background: #f4f4f5; color: #18181b; }
+  .switcher { position: sticky; top: 0; z-index: 50; display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 16px; background: #18181b; }
+  .switcher button { font: inherit; font-size: 14px; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 0; cursor: pointer; background: #3f3f46; color: #fff; }
+  .switcher button[aria-pressed="true"] { background: #fff; color: #18181b; font-weight: 600; }
+  .switcher span { color: #a1a1aa; font-size: 13px; align-self: center; margin-left: auto; }
+  .opt { display: none; min-height: calc(100vh - 68px); }
+  .opt.on { display: block; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; }
+  .desc { max-width: 1040px; margin: 0 auto; padding: 16px 16px 0; font-size: 14px; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  th, td { text-align: left; padding: 12px 14px; vertical-align: middle; }
+  .name { font-weight: 600; }
+  .sub { font-size: 13px; opacity: .7; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .row-actions button, .btn { font: inherit; cursor: pointer; min-height: 44px; }
+  @media (max-width: 720px) {
+    .hide-sm { display: none; }
+    th, td { padding: 10px; }
+  }
+
+  /* ================= A: Bubble pastel ================= */
+  .A { background: radial-gradient(60% 50% at 10% 0%, #ffd6f0 0%, transparent 60%), radial-gradient(50% 40% at 100% 10%, #c9f1ff 0%, transparent 60%), radial-gradient(60% 50% at 50% 100%, #e5dcff 0%, transparent 60%), #fffafd; }
+  .A .top { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+  .A .logo { width: 44px; height: 44px; border-radius: 16px; background: linear-gradient(135deg, #ff7ac6, #7ad7ff); display: grid; place-items: center; color: #fff; font-weight: 800; box-shadow: 0 8px 20px -6px #ff7ac680; }
+  .A .brand { font-weight: 700; font-size: 18px; }
+  .A .me { margin-left: auto; display: flex; align-items: center; gap: 8px; background: #fff; padding: 6px 14px 6px 6px; border-radius: 999px; box-shadow: 0 4px 14px -6px #a78bfa66; font-size: 14px; }
+  .A .av { width: 32px; height: 32px; border-radius: 50%; background: #ffe4f3; display: grid; place-items: center; }
+  .A h1 { font-family: Mitr, Prompt; font-size: clamp(30px, 6vw, 46px); margin: 0 0 4px; font-weight: 600; background: linear-gradient(90deg, #ec4899, #8b5cf6, #06b6d4); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .A .lead { margin: 0 0 22px; color: #6b5b7b; }
+  .A .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .A .stat { background: #fff; border-radius: 22px; padding: 16px 18px; box-shadow: 0 10px 30px -14px #8b5cf655; }
+  .A .stat b { display: block; font-size: 28px; }
+  .A .stat:nth-child(1) b { color: #db2777; } .A .stat:nth-child(2) b { color: #7c3aed; } .A .stat:nth-child(3) b { color: #0891b2; }
+  .A .bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .A input { font: inherit; flex: 1 1 240px; min-height: 48px; border-radius: 999px; border: 2px solid #f3d1ea; padding: 0 20px; background: #fff; outline: none; }
+  .A input:focus { border-color: #ec4899; }
+  .A .pill { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 0; background: #fff; box-shadow: 0 4px 12px -6px #8b5cf666; font: inherit; font-size: 14px; cursor: pointer; }
+  .A .pill.on { background: linear-gradient(135deg, #ff7ac6, #a78bfa); color: #fff; }
+  .A .card { background: #fff; border-radius: 28px; padding: 6px; box-shadow: 0 20px 50px -24px #8b5cf666; }
+  .A th { font-size: 13px; color: #9a86ab; font-weight: 500; }
+  .A tbody tr td { border-top: 1px dashed #f1e4f6; }
+  .A .chip { font-size: 12px; padding: 4px 10px; border-radius: 999px; }
+  .A .c1 { background: #ffe4f3; color: #9d174d; } .A .c2 { background: #ede9fe; color: #5b21b6; } .A .c3 { background: #cffafe; color: #155e75; }
+  .A .off { background: #f4f4f5; color: #71717a; }
+  .A .row-actions button { border: 0; background: #fdf2f8; color: #be185d; border-radius: 14px; padding: 0 14px; }
+
+  /* ================= B: Neo-brutalism ================= */
+  .B { background: #fff8e6; font-family: Prompt; }
+  .B .top { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+  .B .logo { width: 48px; height: 48px; background: #ff5ca8; border: 3px solid #111; box-shadow: 4px 4px 0 #111; display: grid; place-items: center; font-family: Kanit; font-weight: 900; font-size: 22px; transform: rotate(-6deg); }
+  .B .brand { font-family: Kanit; font-weight: 800; font-size: 20px; }
+  .B .me { margin-left: auto; border: 3px solid #111; background: #5ce1ff; padding: 6px 14px; font-weight: 600; box-shadow: 3px 3px 0 #111; font-size: 14px; }
+  .B h1 { font-family: Kanit; font-weight: 900; font-size: clamp(36px, 8vw, 64px); line-height: 1; margin: 0 0 10px; }
+  .B h1 mark { background: #c6ff3d; padding: 0 10px; border: 3px solid #111; box-shadow: 5px 5px 0 #111; display: inline-block; transform: rotate(-2deg); }
+  .B .lead { margin: 16px 0 24px; font-weight: 500; }
+  .B .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .B .stat { border: 3px solid #111; box-shadow: 5px 5px 0 #111; padding: 14px 16px; font-weight: 600; }
+  .B .stat b { display: block; font-family: Kanit; font-size: 36px; font-weight: 900; line-height: 1.1; }
+  .B .stat:nth-child(1) { background: #ff5ca8; } .B .stat:nth-child(2) { background: #ffd23d; } .B .stat:nth-child(3) { background: #5ce1ff; }
+  .B .bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+  .B input { font: inherit; font-weight: 500; flex: 1 1 240px; min-height: 50px; border: 3px solid #111; padding: 0 16px; background: #fff; box-shadow: 4px 4px 0 #111; outline: none; }
+  .B input:focus { background: #fffbd1; }
+  .B .pill { min-height: 50px; padding: 0 16px; border: 3px solid #111; background: #fff; font: inherit; font-weight: 600; cursor: pointer; box-shadow: 4px 4px 0 #111; }
+  .B .pill.on { background: #111; color: #c6ff3d; }
+  .B .pill:active, .B .row-actions button:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 #111; }
+  .B .card { border: 3px solid #111; background: #fff; box-shadow: 8px 8px 0 #111; }
+  .B th { background: #111; color: #fff; font-family: Kanit; font-weight: 700; font-size: 14px; }
+  .B tbody tr td { border-top: 3px solid #111; }
+  .B tbody tr:hover td { background: #fff3c4; }
+  .B .chip { font-size: 12px; font-weight: 700; padding: 3px 8px; border: 2px solid #111; }
+  .B .c1 { background: #ff5ca8; } .B .c2 { background: #ffd23d; } .B .c3 { background: #5ce1ff; }
+  .B .off { background: #e5e5e5; text-decoration: line-through; }
+  .B .row-actions button { border: 3px solid #111; background: #fff; font-weight: 700; padding: 0 14px; box-shadow: 3px 3px 0 #111; }
+
+  /* ================= C: Dark neon glass ================= */
+  .C { background: #0b0718; color: #ece9ff; position: relative; overflow: hidden; }
+  .C::before, .C::after { content: ""; position: absolute; width: 520px; height: 520px; border-radius: 50%; filter: blur(90px); opacity: .55; pointer-events: none; }
+  .C::before { background: #ff2bd6; top: -200px; left: -160px; }
+  .C::after { background: #00e1ff; bottom: -220px; right: -160px; }
+  .C .wrap { position: relative; z-index: 1; }
+  .C .top { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; }
+  .C .logo { width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #ff2bd6, #00e1ff); display: grid; place-items: center; font-weight: 800; box-shadow: 0 0 24px #ff2bd699; }
+  .C .brand { font-weight: 700; font-size: 18px; }
+  .C .me { margin-left: auto; border: 1px solid #ffffff2a; background: #ffffff10; backdrop-filter: blur(10px); padding: 8px 14px; border-radius: 14px; font-size: 14px; }
+  .C h1 { font-family: Kanit; font-weight: 800; font-size: clamp(32px, 7vw, 54px); margin: 0 0 6px; }
+  .C h1 span { background: linear-gradient(90deg, #ff2bd6, #00e1ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .C .lead { margin: 0 0 24px; color: #b8b0d9; }
+  .C .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .C .stat { border: 1px solid #ffffff1f; background: #ffffff0d; backdrop-filter: blur(12px); border-radius: 18px; padding: 16px 18px; color: #b8b0d9; font-size: 14px; }
+  .C .stat b { display: block; font-size: 30px; color: #fff; }
+  .C .stat:nth-child(1) b { text-shadow: 0 0 18px #ff2bd6; } .C .stat:nth-child(3) b { text-shadow: 0 0 18px #00e1ff; }
+  .C .bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .C input { font: inherit; flex: 1 1 240px; min-height: 48px; border-radius: 14px; border: 1px solid #ffffff26; background: #ffffff0d; color: #fff; padding: 0 16px; outline: none; }
+  .C input::placeholder { color: #8f88b3; }
+  .C input:focus { border-color: #00e1ff; box-shadow: 0 0 0 3px #00e1ff33; }
+  .C .pill { min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid #ffffff26; background: transparent; color: #ece9ff; font: inherit; font-size: 14px; cursor: pointer; }
+  .C .pill.on { background: linear-gradient(135deg, #ff2bd6, #7c3aed); border-color: transparent; box-shadow: 0 0 20px #ff2bd666; }
+  .C .card { border: 1px solid #ffffff1f; background: #ffffff0a; backdrop-filter: blur(14px); border-radius: 22px; padding: 4px; }
+  .C th { font-size: 13px; color: #8f88b3; font-weight: 500; }
+  .C tbody tr td { border-top: 1px solid #ffffff14; }
+  .C tbody tr:hover td { background: #ffffff08; }
+  .C .chip { font-size: 12px; padding: 3px 10px; border-radius: 8px; border: 1px solid; }
+  .C .c1 { color: #ff8ae8; border-color: #ff2bd666; background: #ff2bd61a; } .C .c2 { color: #c4b5fd; border-color: #7c3aed80; background: #7c3aed1f; } .C .c3 { color: #7df0ff; border-color: #00e1ff66; background: #00e1ff14; }
+  .C .off { color: #8f88b3; border-color: #ffffff22; }
+  .C .row-actions button { border: 1px solid #ffffff26; background: #ffffff0d; color: #fff; border-radius: 12px; padding: 0 14px; }
+
+  /* ================= D: Sticker / Memphis ================= */
+  .D { background-color: #ffffff; background-image: radial-gradient(#e9e2ff 1.4px, transparent 1.4px); background-size: 22px 22px; position: relative; overflow: hidden; }
+  .D .shape { position: absolute; pointer-events: none; }
+  .D .s1 { width: 120px; height: 120px; border-radius: 50%; background: #ffd23d; top: 70px; right: -30px; }
+  .D .s2 { width: 0; height: 0; border-left: 60px solid transparent; border-right: 60px solid transparent; border-bottom: 100px solid #5ce1ff; top: 300px; left: -40px; transform: rotate(18deg); }
+  .D .s3 { width: 160px; height: 26px; background: repeating-linear-gradient(90deg, #ff5ca8 0 14px, transparent 14px 24px); top: 210px; right: 80px; transform: rotate(-12deg); }
+  .D .wrap { position: relative; z-index: 1; }
+  .D .top { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+  .D .logo { width: 46px; height: 46px; border-radius: 50%; background: #ff5ca8; color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 20px; border: 3px solid #fff; box-shadow: 0 0 0 3px #ff5ca8; }
+  .D .brand { font-weight: 700; font-size: 18px; }
+  .D .me { margin-left: auto; background: #fff; border: 2px solid #1e1b4b; padding: 6px 14px; border-radius: 999px; font-size: 14px; font-weight: 500; }
+  .D h1 { font-family: Mitr, Prompt; font-weight: 600; font-size: clamp(32px, 7vw, 52px); margin: 0 0 4px; color: #1e1b4b; }
+  .D h1 .stk { display: inline-block; background: #c6ff3d; padding: 0 14px; border-radius: 14px; transform: rotate(-3deg); }
+  .D .lead { margin: 0 0 22px; color: #4c4a6b; }
+  .D .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .D .stat { background: #fff; border: 2px solid #1e1b4b; border-radius: 20px; padding: 14px 16px; position: relative; }
+  .D .stat .emo { position: absolute; top: -14px; right: 12px; font-size: 26px; transform: rotate(12deg); }
+  .D .stat b { display: block; font-size: 30px; color: #1e1b4b; }
+  .D .stat:nth-child(1) { transform: rotate(-1.5deg); background: #fff0f7; } .D .stat:nth-child(2) { transform: rotate(1deg); background: #fffbe0; } .D .stat:nth-child(3) { transform: rotate(-.5deg); background: #e8fbff; }
+  .D .bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .D input { font: inherit; flex: 1 1 240px; min-height: 48px; border-radius: 16px; border: 2px solid #1e1b4b; padding: 0 16px; background: #fff; outline: none; }
+  .D input:focus { box-shadow: 0 0 0 4px #ff5ca855; }
+  .D .pill { min-height: 44px; padding: 0 14px; border-radius: 999px; border: 2px solid #1e1b4b; background: #fff; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .D .pill.on { background: #1e1b4b; color: #fff; }
+  .D .card { background: #fff; border: 2px solid #1e1b4b; border-radius: 24px; padding: 4px; }
+  .D th { font-size: 13px; color: #6b6890; font-weight: 500; }
+  .D tbody tr td { border-top: 2px solid #f0edff; }
+  .D .chip { font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 999px; border: 1.5px solid #1e1b4b; }
+  .D .c1 { background: #ffd6ea; } .D .c2 { background: #fff1a8; } .D .c3 { background: #c9f4ff; }
+  .D .off { background: #f1f1f4; color: #6b6890; border-style: dashed; }
+  .D .row-actions button { border: 2px solid #1e1b4b; background: #fff; border-radius: 12px; padding: 0 14px; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="switcher" role="group" aria-label="เลือกแบบ">
+  <button aria-pressed="true" data-k="A">A · บับเบิลพาสเทล</button>
+  <button aria-pressed="false" data-k="B">B · นีโอบรูทัล</button>
+  <button aria-pressed="false" data-k="C">C · นีออนโหมดมืด</button>
+  <button aria-pressed="false" data-k="D">D · สติกเกอร์</button>
+  <span>ข้อมูลทั้งหมดเป็นข้อมูลสมมติ</span>
+</div>
+
+<template id="tpl">
+  <div class="wrap">
+    <div class="top">
+      <div class="logo">U</div>
+      <div class="brand">ระบบจัดการผู้ใช้</div>
+      <div class="me"><span class="av">🙂</span>ผู้ดูแลกลาง ทดสอบ</div>
+    </div>
+    <h1>{{TITLE}}</h1>
+    <p class="lead">จัดการบุคลากรและสิทธิ์ของทุกระบบในคณะ ที่เดียวจบ</p>
+    <div class="stats">
+      <div class="stat"><span class="emo">👥</span><b>92</b>บุคลากรที่ใช้งาน</div>
+      <div class="stat"><span class="emo">🛡️</span><b>14</b>ผู้ดูแลระบบ</div>
+      <div class="stat"><span class="emo">💤</span><b>3</b>ปิดใช้งาน</div>
+    </div>
+    <div class="bar">
+      <input placeholder="ค้นหาชื่อหรืออีเมล…" aria-label="ค้นหา">
+      <button class="pill on">ทั้งหมด</button>
+      <button class="pill">สายวิชาการ</button>
+      <button class="pill">สายสนับสนุน</button>
+      <button class="pill">ปิดใช้งาน</button>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>ชื่อ</th><th class="hide-sm">สังกัด</th><th>สิทธิ์</th><th></th></tr></thead>
+        <tbody>
+          <tr><td><div class="name">อาจารย์ ดร.สมมติ ใจดี</div><div class="sub">sommut.ja@example.ac.th</div></td><td class="hide-sm">หลักสูตรวิทยาการคอมพิวเตอร์</td><td><div class="chips"><span class="chip c1">ประเมิน · ผู้ใช้</span><span class="chip c3">ลงเวลา · ผู้ใช้</span></div></td><td class="row-actions"><button>แก้ไข</button></td></tr>
+          <tr><td><div class="name">นางสาวตัวอย่าง รักงาน</div><div class="sub">tuayang.ra@example.ac.th</div></td><td class="hide-sm">สำนักงานคณะ · งานบริหารทั่วไป</td><td><div class="chips"><span class="chip c2">ประเมิน · ฝ่ายบุคคล</span><span class="chip c3">ลงเวลา · ผู้ดูแล</span><span class="chip c1">รถตู้ · ผู้ดูแล</span></div></td><td class="row-actions"><button>แก้ไข</button></td></tr>
+          <tr><td><div class="name">นายทดลอง มีสุข</div><div class="sub">thodlong.mi@example.ac.th</div></td><td class="hide-sm">สำนักงานคณะ · หน่วยเทคโนโลยีสารสนเทศ</td><td><div class="chips"><span class="chip c2">ผู้ดูแลกลาง</span><span class="chip c1">ประเมิน · ผู้ดูแลระบบ</span></div></td><td class="row-actions"><button>แก้ไข</button></td></tr>
+          <tr><td><div class="name">ผู้ช่วยศาสตราจารย์สมนึก ตั้งใจ</div><div class="sub">somnuek.ta@example.ac.th</div></td><td class="hide-sm">หลักสูตรวิศวกรรมซอฟต์แวร์</td><td><div class="chips"><span class="chip c1">ประเมิน · สร้างการประเมิน</span><span class="chip c3">ห้องประชุม · ผู้ดูแล</span></div></td><td class="row-actions"><button>แก้ไข</button></td></tr>
+          <tr><td><div class="name">นายจำลอง ลาไกล</div><div class="sub">chamlong.la@example.ac.th</div></td><td class="hide-sm">หลักสูตรเทคโนโลยีสารสนเทศ</td><td><div class="chips"><span class="chip off">ปิดใช้งาน · ลาออก</span></div></td><td class="row-actions"><button>เปิดอีกครั้ง</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</template>
+
+<section class="opt A on" data-k="A" data-title="สวัสดี! 👋 บุคลากร"><p class="desc">สีพาสเทลหวาน ๆ ชมพู–ม่วง–ฟ้า มุมโค้งมาก เงานุ่ม หัวข้อไล่สี ดูเป็นมิตร อ่านง่าย</p></section>
+<section class="opt B" data-k="B" data-title="จัดการ <mark>คนในคณะ</mark>"><p class="desc">กรอบดำหนา เงาแข็ง สีสดตัดกัน ฟอนต์หัวข้อหนาใหญ่ ปุ่มกดแล้วยุบ — แนวเว็บ/แอปวัยรุ่นยุคนี้</p></section>
+<section class="opt C" data-k="C" data-title="<span>บุคลากร</span> ทั้งหมด"><p class="desc">พื้นมืด แสงชมพู–ฟ้าเรือง การ์ดกระจก ต่อยอดจากสีชมพู/ฟ้าของระบบประเมิน แต่ดูเท่และเกมมิ่งขึ้น</p></section>
+<section class="opt D" data-k="D" data-title="ทีม <span class=&quot;stk&quot;>ICT</span> ของเรา ✌️"><div class="shape s1"></div><div class="shape s2"></div><div class="shape s3"></div><p class="desc">พื้นขาวลายจุด รูปทรงเรขาคณิตแบบ Memphis การ์ดเอียงเหมือนสติกเกอร์ มีอีโมจิ สนุกแต่ยังเป็นระเบียบ</p></section>
+
+<script>
+  const tpl = document.getElementById("tpl").innerHTML;
+  document.querySelectorAll(".opt").forEach(s => s.insertAdjacentHTML("beforeend", tpl.replace("{{TITLE}}", s.dataset.title)));
+  document.querySelectorAll(".switcher button").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll(".switcher button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    document.querySelectorAll(".opt").forEach(s => s.classList.toggle("on", s.dataset.k === b.dataset.k));
+    window.scrollTo(0, 0);
+  }));
+</script>
+</body>
+</html>

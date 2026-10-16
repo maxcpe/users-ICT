@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>แบบ C ทุกหน้า · ระบบจัดการผู้ใช้</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Kanit:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0718; --ink: #ece9ff; --muted: #b8b0d9; --faint: #8f88b3;
+    --line: #ffffff1f; --glass: #ffffff0d; --glass-2: #ffffff14;
+    --pink: #ff2bd6; --cyan: #00e1ff; --violet: #7c3aed;
+    --pink-ink: #ff8ae8; --cyan-ink: #7df0ff; --violet-ink: #c4b5fd;
+    --ok: #3dffa8; --ok-ink: #8affc9; --warn: #ffd23d; --warn-ink: #ffe27a; --bad: #ff4d6d; --bad-ink: #ff9aad;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Prompt, sans-serif; background: var(--bg); color: var(--ink); }
+  a { color: var(--cyan-ink); }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+
+  /* ตัวเลือกหน้า (เฉพาะไฟล์ตัวอย่าง) */
+  .switcher { position: sticky; top: 0; z-index: 100; display: flex; gap: 6px; overflow-x: auto; padding: 10px 16px; background: #05030c; border-bottom: 1px solid var(--line); }
+  .switcher button { flex: none; min-height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--muted); font-size: 13px; }
+  .switcher button[aria-pressed="true"] { background: #fff; color: #0b0718; font-weight: 600; }
+
+  .page { display: none; position: relative; min-height: calc(100vh - 61px); overflow: hidden; }
+  .page.on { display: block; }
+  .page::before, .page::after { content: ""; position: absolute; width: 520px; height: 520px; border-radius: 50%; filter: blur(100px); opacity: .45; pointer-events: none; }
+  .page::before { background: var(--pink); top: -240px; left: -180px; }
+  .page::after { background: var(--cyan); bottom: -260px; right: -180px; }
+  .page > * { position: relative; z-index: 1; }
+
+  /* แถบบน */
+  .hdr { display: flex; align-items: center; gap: 12px; max-width: 1120px; margin: 0 auto; padding: 16px; }
+  .logo { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, var(--pink), var(--cyan)); display: grid; place-items: center; font-weight: 800; box-shadow: 0 0 22px #ff2bd680; flex: none; }
+  .brand { font-weight: 700; }
+  .nav { display: flex; gap: 4px; margin-left: 20px; }
+  .nav a { min-height: 44px; display: inline-flex; align-items: center; padding: 0 14px; border-radius: 12px; color: var(--muted); text-decoration: none; font-size: 15px; }
+  .nav a.on { color: #fff; background: var(--glass-2); box-shadow: inset 0 -2px 0 var(--pink); }
+  .me { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); }
+  .me .help { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; color: var(--cyan-ink); text-decoration: none; }
+  .me .help i { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid currentColor; display: grid; place-items: center; font-style: normal; font-size: 12px; }
+  .badge-me { border: 1px solid var(--line); background: var(--glass); padding: 8px 12px; border-radius: 12px; }
+
+  main { max-width: 1120px; margin: 0 auto; padding: 12px 16px 64px; }
+  .back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: 14px; color: var(--muted); text-decoration: none; margin-bottom: 4px; }
+  h1 { font-family: Kanit, Prompt; font-weight: 800; font-size: clamp(30px, 6vw, 46px); line-height: 1.15; margin: 0 0 6px; }
+  h1 .g { background: linear-gradient(90deg, var(--pink), var(--cyan)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  h2 { font-size: 18px; font-weight: 600; margin: 0 0 12px; }
+  .lead { color: var(--muted); margin: 0 0 22px; }
+  .muted { color: var(--muted); } .faint { color: var(--faint); font-size: 13px; }
+
+  .glass { border: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-radius: 20px; }
+  .pad { padding: 20px; }
+  .grid { display: grid; gap: 14px; }
+  .g3 { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  .g2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .stat { padding: 16px 18px; color: var(--muted); font-size: 14px; }
+  .stat b { display: block; font-size: 30px; color: #fff; font-weight: 700; }
+  .glow-p { text-shadow: 0 0 18px var(--pink); } .glow-c { text-shadow: 0 0 18px var(--cyan); }
+
+  .btn { min-height: 44px; padding: 0 18px; border-radius: 12px; border: 1px solid var(--line); background: var(--glass); color: #fff; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 500; }
+  .btn-primary { background: linear-gradient(135deg, var(--pink), var(--violet)); border-color: transparent; box-shadow: 0 0 22px #ff2bd666; }
+  .btn-cyan { background: linear-gradient(135deg, var(--cyan), #3b82f6); border-color: transparent; color: #04121a; font-weight: 600; box-shadow: 0 0 22px #00e1ff55; }
+  .btn-danger { border-color: #ff4d6d80; color: var(--bad-ink); background: #ff4d6d14; }
+  .btn-sm { min-height: 40px; padding: 0 12px; font-size: 14px; }
+
+  .bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+  .input, select.input { min-height: 48px; border-radius: 14px; border: 1px solid #ffffff26; background: #ffffff0d; color: #fff; padding: 0 16px; outline: none; font-size: 16px; }
+  .input::placeholder { color: var(--faint); }
+  .input:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px #00e1ff33; }
+  select.input option { background: #1a1430; }
+  .grow { flex: 1 1 240px; }
+  .pill { min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid #ffffff26; background: transparent; color: var(--ink); font-size: 14px; }
+  .pill.on { background: linear-gradient(135deg, var(--pink), var(--violet)); border-color: transparent; box-shadow: 0 0 18px #ff2bd655; }
+
+  table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  th, td { text-align: left; padding: 12px 14px; vertical-align: middle; }
+  th { font-size: 13px; color: var(--faint); font-weight: 500; }
+  tbody td { border-top: 1px solid #ffffff14; }
+  tbody tr:hover td { background: #ffffff08; }
+  .name { font-weight: 600; } .sub { font-size: 13px; color: var(--faint); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 12px; padding: 3px 10px; border-radius: 8px; border: 1px solid; white-space: nowrap; }
+  .c-p { color: var(--pink-ink); border-color: #ff2bd666; background: #ff2bd61a; }
+  .c-c { color: var(--cyan-ink); border-color: #00e1ff66; background: #00e1ff14; }
+  .c-v { color: var(--violet-ink); border-color: #7c3aed80; background: #7c3aed1f; }
+  .c-ok { color: var(--ok-ink); border-color: #3dffa866; background: #3dffa814; }
+  .c-warn { color: var(--warn-ink); border-color: #ffd23d66; background: #ffd23d14; }
+  .c-off { color: var(--faint); border-color: #ffffff22; border-style: dashed; }
+  .check { width: 22px; height: 22px; accent-color: var(--pink); }
+
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 18px; overflow-x: auto; }
+  .tabs a { min-height: 48px; display: inline-flex; align-items: center; padding: 0 16px; color: var(--muted); text-decoration: none; white-space: nowrap; border-bottom: 2px solid transparent; }
+  .tabs a.on { color: #fff; border-color: var(--pink); text-shadow: 0 0 14px #ff2bd6aa; }
+
+  .field { display: grid; gap: 6px; margin-bottom: 16px; }
+  .field label { font-size: 14px; color: var(--muted); }
+  .field .hint { font-size: 13px; color: var(--faint); }
+  .req { color: var(--pink-ink); }
+  .kv { display: grid; grid-template-columns: 140px 1fr; gap: 10px 16px; font-size: 15px; }
+  .kv dt { color: var(--faint); } .kv dd { margin: 0; }
+
+  .sys { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-top: 1px solid #ffffff14; flex-wrap: wrap; }
+  .sys:first-child { border-top: 0; }
+  .sys .ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; background: var(--glass-2); flex: none; }
+  .sys .info { flex: 1 1 180px; }
+  .sys select { min-width: 220px; }
+
+  .callout { border-radius: 14px; padding: 12px 14px; font-size: 14px; display: flex; gap: 10px; }
+  .callout.warn { background: #ffd23d12; border: 1px solid #ffd23d55; color: var(--warn-ink); }
+  .callout.info { background: #00e1ff10; border: 1px solid #00e1ff44; color: var(--cyan-ink); }
+  .callout.bad { background: #ff4d6d12; border: 1px solid #ff4d6d55; color: var(--bad-ink); }
+
+  .secret { display: flex; align-items: center; gap: 12px; padding: 16px; border-top: 1px solid #ffffff14; flex-wrap: wrap; }
+  .secret:first-of-type { border-top: 0; }
+  .mask { font-family: ui-monospace, Consolas, monospace; letter-spacing: .08em; color: #fff; }
+
+  .log { display: grid; grid-template-columns: 110px 1fr; gap: 4px 16px; padding: 14px 16px; border-top: 1px solid #ffffff14; }
+  .log:first-child { border-top: 0; }
+  .log time { color: var(--faint); font-size: 13px; }
+  .diff { font-size: 13px; color: var(--muted); }
+  .diff s { color: var(--bad-ink); } .diff ins { color: var(--ok-ink); text-decoration: none; }
+
+  .pager { display: flex; gap: 6px; justify-content: center; margin-top: 16px; }
+  .pager button { min-width: 44px; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--muted); }
+  .pager button.on { background: var(--glass-2); color: #fff; border-color: var(--pink); }
+
+  .bulk { position: sticky; bottom: 16px; margin-top: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 12px 16px; border-radius: 16px; background: #1a1032e6; border: 1px solid #ff2bd666; box-shadow: 0 0 30px #ff2bd633; }
+
+  /* dialog */
+  .scrim { position: absolute; inset: 0; background: #05030ccc; backdrop-filter: blur(4px); display: grid; place-items: center; padding: 16px; z-index: 5; }
+  .dialog { width: min(520px, 100%); padding: 24px; border-radius: 22px; background: #150e2a; border: 1px solid #ff2bd655; box-shadow: 0 0 60px #ff2bd633; }
+  .dialog h2 { font-size: 22px; }
+  .dialog .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+  .impact { margin: 12px 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; }
+  .impact li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px; border-radius: 10px; background: var(--glass); }
+
+  /* login */
+  .login { min-height: calc(100vh - 61px); display: grid; place-items: center; padding: 24px 16px; }
+  .login-card { width: min(440px, 100%); padding: 32px 28px; text-align: center; }
+  .login-card .logo { width: 72px; height: 72px; border-radius: 22px; font-size: 32px; margin: 0 auto 18px; animation: float 4s ease-in-out infinite; }
+  .ms { width: 100%; justify-content: center; min-height: 52px; font-size: 16px; }
+  .grid-bg { position: absolute; inset: 0; background-image: linear-gradient(#ffffff08 1px, transparent 1px), linear-gradient(90deg, #ffffff08 1px, transparent 1px); background-size: 40px 40px; mask-image: radial-gradient(60% 60% at 50% 50%, #000, transparent); z-index: 0; }
+  @keyframes float { 50% { transform: translateY(-6px); } }
+  @media (prefers-reduced-motion: reduce) { .login-card .logo { animation: none; } }
+
+  /* help */
+  .steps { counter-reset: s; display: grid; gap: 12px; padding: 0; margin: 0; list-style: none; }
+  .steps li { counter-increment: s; display: flex; gap: 12px; align-items: flex-start; }
+  .steps li::before { content: counter(s); flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; background: linear-gradient(135deg, var(--pink), var(--cyan)); color: #0b0718; }
+
+  /* 404 */
+  .big404 { font-family: Kanit; font-size: clamp(100px, 22vw, 180px); font-weight: 800; line-height: 1; background: linear-gradient(90deg, var(--pink), var(--cyan)); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 30px #ff2bd666); }
+
+  @media (max-width: 820px) {
+    .nav { display: none; }
+    .hide-sm { display: none; }
+    .kv { grid-template-columns: 1fr; gap: 2px; } .kv dd { margin-bottom: 10px; }
+    .log { grid-template-columns: 1fr; }
+    th, td { padding: 10px; }
+    .badge-me span { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="switcher" role="group" aria-label="เลือกหน้า">
+  <button data-p="login" aria-pressed="true">เข้าสู่ระบบ</button>
+  <button data-p="list" aria-pressed="false">รายชื่อ (ผู้ดูแลกลาง)</button>
+  <button data-p="list-sys" aria-pressed="false">รายชื่อ (ผู้ดูแลระบบ)</button>
+  <button data-p="detail" aria-pressed="false">ข้อมูลรายคน</button>
+  <button data-p="roles" aria-pressed="false">สิทธิ์รายคน</button>
+  <button data-p="secret" aria-pressed="false">ข้อมูลอ่อนไหว</button>
+  <button data-p="history" aria-pressed="false">ประวัติรายคน</button>
+  <button data-p="new" aria-pressed="false">เพิ่มบุคลากร</button>
+  <button data-p="deactivate" aria-pressed="false">ปิดใช้งาน</button>
+  <button data-p="delete" aria-pressed="false">ลบแถวที่เพิ่มผิด</button>
+  <button data-p="bulk" aria-pressed="false">ตั้งสิทธิ์หลายคน</button>
+  <button data-p="systems" aria-pressed="false">ระบบและผู้ดูแล</button>
+  <button data-p="sys-new" aria-pressed="false">ลงทะเบียนระบบใหม่</button>
+  <button data-p="sys-overview" aria-pressed="false">ระบบ: ภาพรวม</button>
+  <button data-p="sys-people" aria-pressed="false">ระบบ: ผู้ใช้</button>
+  <button data-p="sys-levels" aria-pressed="false">ระบบ: ระดับสิทธิ์</button>
+  <button data-p="sys-connect" aria-pressed="false">ระบบ: วิธีเชื่อมต่อ</button>
+  <button data-p="sys-settings" aria-pressed="false">ระบบ: ตั้งค่า</button>
+  <button data-p="audit" aria-pressed="false">บันทึกการใช้งาน</button>
+  <button data-p="help" aria-pressed="false">วิธีใช้</button>
+  <button data-p="notfound" aria-pressed="false">ไม่พบหน้า</button>
+</div>
+
+<template id="hdr-central">
+  <header class="hdr">
+    <div class="logo">U</div><div class="brand">ระบบจัดการผู้ใช้</div>
+    <nav class="nav"><a href="#" class="on" data-n="users">บุคลากร</a><a href="#" data-n="systems">ระบบและผู้ดูแล</a><a href="#" data-n="audit">บันทึกการใช้งาน</a></nav>
+    <div class="me"><a href="#" class="help"><i>?</i>วิธีใช้</a><span class="badge-me">🛡️ <span>ผู้ดูแลกลาง ทดสอบ</span></span></div>
+  </header>
+</template>
+<template id="hdr-sys">
+  <header class="hdr">
+    <div class="logo">U</div><div class="brand">ระบบจัดการผู้ใช้</div>
+    <nav class="nav"><a href="#" class="on">บุคลากร</a><a href="#">บันทึกการใช้งาน</a></nav>
+    <div class="me"><a href="#" class="help"><i>?</i>วิธีใช้</a><span class="badge-me">🔧 <span>ผู้ดูแลระบบลงเวลา</span></span></div>
+  </header>
+</template>
+
+<!-- ============ เข้าสู่ระบบ ============ -->
+<section class="page on" data-p="login">
+  <div class="grid-bg"></div>
+  <div class="login">
+    <div class="glass login-card">
+      <div class="logo">U</div>
+      <h1 style="font-size:34px"><span class="g">ระบบจัดการผู้ใช้</span></h1>
+      <p class="lead" style="margin-bottom:26px">คณะเทคโนโลยีสารสนเทศและการสื่อสาร<br>มหาวิทยาลัยพะเยา</p>
+      <button class="btn btn-primary ms">
+        <svg width="20" height="20" viewBox="0 0 23 23" aria-hidden="true"><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>
+        เข้าสู่ระบบด้วย Microsoft 365
+      </button>
+      <p class="faint" style="margin:18px 0 0">สำหรับผู้ดูแลกลางและผู้ดูแลระบบของคณะเท่านั้น<br>ทุกการเปลี่ยนแปลงถูกบันทึกพร้อมชื่อผู้แก้</p>
+      <p style="margin:14px 0 0;font-size:14px"><a href="#">เข้าสู่ระบบไม่ได้?</a> · <a href="#">การคุ้มครองข้อมูลส่วนบุคคล</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ รายชื่อ ผู้ดูแลกลาง ============ -->
+<section class="page" data-p="list" data-h="central">
+  <main>
+    <div class="bar" style="justify-content:space-between;margin-bottom:6px">
+      <h1><span class="g">บุคลากร</span> ทั้งหมด</h1>
+      <a href="#" class="btn btn-primary">＋ เพิ่มบุคลากร</a>
+    </div>
+    <p class="lead">จัดการข้อมูลและสิทธิ์ของทุกระบบในคณะ</p>
+    <div class="grid g3" style="margin-bottom:18px">
+      <div class="glass stat"><b class="glow-p">92</b>ใช้งาน</div>
+      <div class="glass stat"><b>14</b>ผู้ดูแลระบบ</div>
+      <div class="glass stat"><b class="glow-c">3</b>ปิดใช้งาน</div>
+      <div class="glass stat"><b style="color:var(--warn-ink)">2</b>ข้อมูลไม่ครบ</div>
+    </div>
+    <div class="bar">
+      <input class="input grow" placeholder="ค้นหาชื่อหรืออีเมล…" aria-label="ค้นหา">
+      <select class="input" aria-label="สังกัด"><option>ทุกสังกัด</option><option>สำนักงานคณะ</option><option>หลักสูตรวิทยาการคอมพิวเตอร์</option></select>
+      <select class="input" aria-label="สิทธิ์"><option>สิทธิ์: ทุกระบบ</option><option>ผู้ดูแลระบบลงเวลา</option><option>ผู้ดูแลระบบรถตู้</option></select>
+    </div>
+    <div class="bar">
+      <button class="pill on">ทั้งหมด</button><button class="pill">สายวิชาการ</button><button class="pill">สายสนับสนุน</button><button class="pill">ปิดใช้งาน</button><button class="pill">⚠ ข้อมูลไม่ครบ</button>
+    </div>
+    <div class="glass" style="padding:4px;overflow-x:auto">
+      <table>
+        <thead><tr><th style="width:44px"><input type="checkbox" class="check" aria-label="เลือกทั้งหมด"></th><th>ชื่อ</th><th class="hide-sm">สังกัด</th><th>สิทธิ์</th><th></th></tr></thead>
+        <tbody>
+          <tr><td><input type="checkbox" class="check" aria-label="เลือก"></td><td><div class="name">อาจารย์ ดร.สมมติ ใจดี</div><div class="sub">sommut.ja@example.ac.th</div></td><td class="hide-sm">หลักสูตรวิทยาการคอมพิวเตอร์</td><td><div class="chips"><span class="chip c-p">ประเมิน · ผู้ใช้</span><span class="chip c-c">ลงเวลา · ผู้ใช้</span></div></td><td><a href="#" class="btn btn-sm">เปิด</a></td></tr>
+          <tr><td><input type="checkbox" class="check" aria-label="เลือก"></td><td><div class="name">นางสาวตัวอย่าง รักงาน</div><div class="sub">tuayang.ra@example.ac.th</div></td><td class="hide-sm">สำนักงานคณะ · งานบริหารทั่วไป</td><td><div class="chips"><span class="chip c-v">ประเมิน · ฝ่ายบุคคล</span><span class="chip c-c">ลงเวลา · ผู้ดูแล</span><span class="chip c-p">รถตู้ · ผู้ดูแล</span></div></td><td><a href="#" class="btn btn-sm">เปิด</a></td></tr>
+          <tr><td><input type="checkbox" class="check" aria-label="เลือก"></td><td><div class="name">นายทดลอง มีสุข</div><div class="sub">thodlong.mi@example.ac.th</div></td><td class="hide-sm">สำนักงานคณะ · หน่วยเทคโนโลยีสารสนเทศ</td><td><div class="chips"><span class="chip c-v">🛡️ ผู้ดูแลกลาง</span><span class="chip c-p">ประเมิน · ผู้ดูแลระบบ</span></div></td><td><a href="#" class="btn btn-sm">เปิด</a></td></tr>
+          <tr><td><input type="checkbox" class="check" aria-label="เลือก"></td><td><div class="name">ผู้ช่วยศาสตราจารย์สมนึก ตั้งใจ</div><div class="sub">somnuek.ta@example.ac.th</div></td><td class="hide-sm">หลักสูตรวิศวกรรมซอฟต์แวร์</td><td><div class="chips"><span class="chip c-p">ประเมิน · สร้างการประเมิน</span><span class="chip c-c">ห้องประชุม · ผู้ดูแล</span></div></td><td><a href="#" class="btn btn-sm">เปิด</a></td></tr>
+          <tr><td><input type="checkbox" class="check" aria-label="เลือก"></td><td><div class="name">นางสาวใหม่ เพิ่งมา</div><div class="sub">mai.pe@example.ac.th</div></td><td class="hide-sm"><span class="chip c-warn">⚠ ไม่มีตำแหน่ง</span></td><td><div class="chips"><span class="chip c-off">ยังไม่มีสิทธิ์</span></div></td><td><a href="#" class="btn btn-sm">เปิด</a></td></tr>
+          <tr><td><input type="checkbox" class="check" aria-label="เลือก"></td><td><div class="name" style="color:var(--faint)">นายจำลอง ลาไกล</div><div class="sub">chamlong.la@example.ac.th</div></td><td class="hide-sm faint">หลักสูตรเทคโนโลยีสารสนเทศ</td><td><div class="chips"><span class="chip c-off">💤 ปิดใช้งาน · ลาออก</span></div></td><td><a href="#" class="btn btn-sm">เปิด</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pager"><button aria-label="ก่อนหน้า">‹</button><button class="on">1</button><button>2</button><button aria-label="ถัดไป">›</button></div>
+  </main>
+</section>
+
+<!-- ============ รายชื่อ ผู้ดูแลระบบ ============ -->
+<section class="page" data-p="list-sys" data-h="sys">
+  <main>
+    <h1><span class="g">บุคลากร</span></h1>
+    <p class="lead">ท่านตั้งสิทธิ์ได้เฉพาะ <b style="color:#fff">ระบบลงเวลา</b> · ข้อมูลส่วนตัวแก้ได้ที่ผู้ดูแลกลาง</p>
+    <div class="bar">
+      <input class="input grow" placeholder="ค้นหาชื่อหรืออีเมล…" aria-label="ค้นหา">
+      <select class="input" aria-label="สิทธิ์ลงเวลา"><option>สิทธิ์ลงเวลา: ทั้งหมด</option><option>ผู้ใช้</option><option>ผู้ใช้และผู้ดูแล</option><option>ไม่มีสิทธิ์</option></select>
+    </div>
+    <div class="glass" style="padding:4px;overflow-x:auto">
+      <table>
+        <thead><tr><th>ชื่อ</th><th class="hide-sm">สังกัด</th><th>สิทธิ์ระบบลงเวลา</th></tr></thead>
+        <tbody>
+          <tr><td><div class="name">อาจารย์ ดร.สมมติ ใจดี</div><div class="sub">sommut.ja@example.ac.th</div></td><td class="hide-sm">หลักสูตรวิทยาการคอมพิวเตอร์</td><td><select class="input" aria-label="สิทธิ์"><option>ผู้ใช้</option><option>ผู้ใช้และผู้ดูแล</option><option>ผู้ดูแลเท่านั้น</option><option>ไม่มีสิทธิ์</option></select></td></tr>
+          <tr><td><div class="name">นางสาวตัวอย่าง รักงาน <span class="chip c-c">ท่าน</span></div><div class="sub">tuayang.ra@example.ac.th</div></td><td class="hide-sm">สำนักงานคณะ</td><td><span class="faint">ผู้ใช้และผู้ดูแล · แก้สิทธิ์ตัวเองไม่ได้</span></td></tr>
+          <tr><td><div class="name">นางสาวใหม่ เพิ่งมา</div><div class="sub">mai.pe@example.ac.th</div></td><td class="hide-sm">สำนักงานคณะ</td><td><select class="input" aria-label="สิทธิ์"><option>ไม่มีสิทธิ์</option><option>ผู้ใช้</option><option>ผู้ใช้และผู้ดูแล</option><option>ผู้ดูแลเท่านั้น</option></select></td></tr>
+          <tr><td><div class="name" style="color:var(--faint)">นายจำลอง ลาไกล</div><div class="sub">chamlong.la@example.ac.th</div></td><td class="hide-sm faint">หลักสูตรเทคโนโลยีสารสนเทศ</td><td><span class="chip c-off">💤 ปิดใช้งาน</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="bulk"><span>เปลี่ยน <b>1</b> คน</span><span class="faint">มีผลเมื่อผู้ใช้เข้าสู่ระบบลงเวลาครั้งถัดไป</span><span style="margin-left:auto;display:flex;gap:8px"><button class="btn">ยกเลิก</button><button class="btn btn-primary">บันทึก</button></span></div>
+  </main>
+</section>
+
+<!-- ============ ข้อมูลรายคน ============ -->
+<template id="person-head">
+  <a href="#" class="back">← กลับไปรายชื่อ</a>
+  <div class="bar" style="justify-content:space-between;align-items:flex-start">
+    <div>
+      <h1 style="font-size:clamp(26px,5vw,38px)">นางสาวตัวอย่าง รักงาน</h1>
+      <div class="chips" style="margin-bottom:18px"><span class="chip c-ok">● ใช้งาน</span><span class="chip c-c">สายสนับสนุน</span><span class="faint">รหัส 1042</span></div>
+    </div>
+    <button class="btn btn-danger" data-go="deactivate">ปิดใช้งาน</button>
+  </div>
+  <nav class="tabs"><a href="#" data-go="detail">ข้อมูลทั่วไป</a><a href="#" data-go="roles">สิทธิ์ (3)</a><a href="#" data-go="secret">ข้อมูลอ่อนไหว 🔒</a><a href="#" data-go="history">ประวัติ</a></nav>
+</template>
+
+<section class="page" data-p="detail" data-h="central" data-tab="0">
+  <main>
+    <div class="person"></div>
+    <div class="grid g2">
+      <form class="glass pad">
+        <h2>ข้อมูลทั่วไป</h2>
+        <div class="field"><label>ชื่อ–สกุล <span class="req">*</span></label><input class="input" value="นางสาวตัวอย่าง รักงาน"><span class="hint">รวมคำนำหน้าและตำแหน่งทางวิชาการ</span></div>
+        <div class="field"><label>อีเมล <span class="req">*</span></label><input class="input" value="tuayang.ra@example.ac.th"><span class="hint">ต้องตรงกับบัญชี Microsoft 365</span></div>
+        <div class="field"><label>ตำแหน่ง <span class="req">*</span></label><input class="input" value="นักวิชาการศึกษา"></div>
+        <div class="field"><label>สังกัด <span class="req">*</span></label><select class="input"><option>สำนักงานคณะ</option></select></div>
+        <div class="field"><label>งาน</label><select class="input"><option>งานบริหารทั่วไป</option></select></div>
+        <div class="bar" style="justify-content:flex-end;margin:0"><button type="button" class="btn">ยกเลิก</button><button type="button" class="btn btn-primary">บันทึก</button></div>
+      </form>
+      <div class="grid" style="align-content:start">
+        <div class="glass pad">
+          <h2>สรุป</h2>
+          <dl class="kv"><dt>สิทธิ์</dt><dd>3 ระบบ</dd><dt>ผู้ดูแลระบบ</dt><dd>ลงเวลา, รถตู้</dd><dt>แก้ล่าสุด</dt><dd>2 ต.ค. 2569 โดย นายทดลอง มีสุข</dd></dl>
+        </div>
+        <div class="callout info">ℹ️ <span>ระบบประเมินเก็บชื่อและตำแหน่ง ณ วันปิดรอบ การแก้ที่นี่ไม่เปลี่ยนรายงานเก่า</span></div>
+      </div>
+    </div>
+  </main>
+</section>
+
+<!-- ============ สิทธิ์รายคน ============ -->
+<section class="page" data-p="roles" data-h="central" data-tab="1">
+  <main>
+    <div class="person"></div>
+    <div class="glass">
+      <div class="sys"><div class="ic">📝</div><div class="info"><b>ระบบประเมิน</b><div class="faint">มีผลทันที</div></div><select class="input"><option>ไม่มีสิทธิ์</option><option>ผู้ใช้</option><option>เจ้าหน้าที่สร้างการประเมิน</option><option selected>เจ้าหน้าที่ฝ่ายบุคคล</option><option>ผู้ดูแลระบบ</option></select></div>
+      <div class="sys"><div class="ic">⏰</div><div class="info"><b>ระบบลงเวลา</b><div class="faint">มีผลเมื่อเข้าสู่ระบบครั้งถัดไป</div></div><select class="input"><option>ไม่มีสิทธิ์</option><option>ผู้ใช้</option><option selected>ผู้ใช้และผู้ดูแล</option><option>ผู้ดูแลเท่านั้น</option></select></div>
+      <div class="sys"><div class="ic">🚐</div><div class="info"><b>ระบบรถตู้</b><div class="faint">ฝั่งผู้ใช้เปิดให้ทุกคนที่มีบัญชี 365 · ระดับ "ผู้ใช้" ไม่ได้ให้สิทธิ์เพิ่ม</div></div><select class="input" aria-label="สิทธิ์ระบบรถตู้ของ นางสาวตัวอย่าง รักงาน"><option>ไม่มีสิทธิ์</option><option>ผู้ใช้</option><option selected>ผู้ดูแล</option></select></div>
+      <div class="sys"><div class="ic">🏢</div><div class="info"><b>จองห้องประชุม</b><div class="faint">ฝั่งผู้ใช้เปิดให้ทุกคนที่มีบัญชี 365 · ระดับ "ผู้ใช้" ไม่ได้ให้สิทธิ์เพิ่ม</div></div><select class="input" aria-label="สิทธิ์จองห้องประชุมของ นางสาวตัวอย่าง รักงาน"><option>ไม่มีสิทธิ์</option><option selected>ผู้ใช้</option><option>ผู้ดูแล</option></select></div>
+      <div class="sys"><div class="ic">📚</div><div class="info"><b>ห้องศึกษา</b><div class="faint">ฝั่งผู้ใช้เปิดให้ทุกคนที่มีบัญชี 365</div></div><select class="input" aria-label="สิทธิ์ห้องศึกษาของ นางสาวตัวอย่าง รักงาน"><option selected>ไม่ใช่ผู้ดูแล</option><option>ผู้ดูแล</option></select></div>
+      <div class="sys"><div class="ic">🎟️</div><div class="info"><b>ระบบลงทะเบียน</b><div class="faint"><span class="chip c-warn">⚠ ชื่อระดับยังไม่ยืนยัน</span></div></div><select class="input" aria-label="สิทธิ์ระบบลงทะเบียนของ นางสาวตัวอย่าง รักงาน"><option>ไม่มีสิทธิ์</option><option>ระดับ 1</option><option selected>ระดับ 90</option></select></div>
+      <div class="sys"><div class="ic">📖</div><div class="info"><b>ห้องสมุด</b><div class="faint">ระบบใหม่ · เก็บในตารางกลาง</div></div><select class="input" aria-label="สิทธิ์ห้องสมุดของ นางสาวตัวอย่าง รักงาน"><option selected>ไม่มีสิทธิ์</option><option>ผู้ใช้</option><option>ผู้ดูแล</option></select></div>
+      <div class="sys"><div class="ic">⚙️</div><div class="info"><b>ค่าที่ไม่อยู่ในรายการ (ตัวอย่าง)</b><div class="faint">มีคนแก้ในฐานข้อมูลตรง</div></div><select class="input" aria-label="ตัวอย่างค่าอื่น" style="border-color:#ffd23d88"><option selected>ค่าอื่น (5) — คงเดิม</option><option>ไม่มีสิทธิ์</option><option>ผู้ใช้</option></select></div>
+    </div>
+    <div class="bulk"><span>เปลี่ยน <b>1</b> ระบบ</span><span style="margin-left:auto;display:flex;gap:8px"><button class="btn">ยกเลิก</button><button class="btn btn-primary">บันทึกสิทธิ์</button></span></div>
+  </main>
+</section>
+
+<!-- ============ ข้อมูลอ่อนไหว ============ -->
+<section class="page" data-p="secret" data-h="central" data-tab="2">
+  <main>
+    <div class="person"></div>
+    <div class="callout warn" style="margin-bottom:14px">🔒 <span>เฉพาะผู้ดูแลกลาง · การกด "แสดง" ทุกครั้งถูกบันทึก · ไม่มีการเก็บเลขบัตรประชาชนตัวจริง</span></div>
+    <div class="glass">
+      <div class="secret"><div style="flex:1 1 200px"><b>เลขบัตรประชาชน</b><div class="faint">เก็บเป็นรหัส HMAC ดูเลขเดิมไม่ได้</div></div><span class="chip c-ok">✓ มีข้อมูลแล้ว</span><button class="btn btn-sm">ตั้งค่าใหม่</button><button class="btn btn-sm btn-danger">ล้างค่า</button></div>
+      <div class="secret"><div style="flex:1 1 200px"><b>รหัสบัตร RFID</b></div><span class="mask">•••• •••• 4821</span><button class="btn btn-sm">👁 แสดง</button><button class="btn btn-sm">แก้ไข</button></div>
+      <div class="secret"><div style="flex:1 1 200px"><b>เบอร์โทร</b><div class="faint">ระบบจองห้องประชุมใช้ในฟอร์มจอง</div></div><span class="mask">08•-•••-•567</span><button class="btn btn-sm">👁 แสดง</button><button class="btn btn-sm">แก้ไข</button></div>
+    </div>
+    <form class="glass pad" style="margin-top:14px;max-width:520px">
+      <h2>ตั้งเลขบัตรประชาชนใหม่</h2>
+      <div class="field"><label>เลขบัตรประชาชน 13 หลัก</label><input class="input" inputmode="numeric" autocomplete="off" placeholder="x-xxxx-xxxxx-xx-x"><span class="hint">ระบบแปลงเป็น HMAC ทันทีและล้างช่องนี้หลังบันทึก</span></div>
+      <div class="bar" style="justify-content:flex-end;margin:0"><button type="button" class="btn">ยกเลิก</button><button type="button" class="btn btn-primary">บันทึก</button></div>
+    </form>
+  </main>
+</section>
+
+<!-- ============ ประวัติรายคน ============ -->
+<section class="page" data-p="history" data-h="central" data-tab="3">
+  <main>
+    <div class="person"></div>
+    <div class="glass">
+      <div class="log"><time>2 ต.ค. 2569<br>14:20</time><div><b>ตั้งสิทธิ์ ระบบรถตู้</b> <span class="faint">โดย นายทดลอง มีสุข</span><div class="diff"><s>ไม่ใช่ผู้ดูแล</s> → <ins>ผู้ดูแล</ins></div></div></div>
+      <div class="log"><time>28 ก.ย. 2569<br>09:05</time><div><b>แสดงเบอร์โทร</b> <span class="faint">โดย นายทดลอง มีสุข</span></div></div>
+      <div class="log"><time>15 ก.ย. 2569<br>10:41</time><div><b>แก้ข้อมูลทั่วไป</b> <span class="faint">โดย นายทดลอง มีสุข</span><div class="diff">ตำแหน่ง: <s>เจ้าหน้าที่บริหารงานทั่วไป</s> → <ins>นักวิชาการศึกษา</ins></div></div></div>
+      <div class="log"><time>15 ก.ย. 2569<br>10:40</time><div><b>แก้เลขบัตรประชาชน</b> <span class="faint">โดย นายทดลอง มีสุข · ไม่แสดงค่า</span></div></div>
+      <div class="log"><time>1 ก.ย. 2569<br>08:30</time><div><b>เพิ่มบุคลากร</b> <span class="faint">โดย นายทดลอง มีสุข</span></div></div>
+    </div>
+  </main>
+</section>
+
+<!-- ============ เพิ่มบุคลากร ============ -->
+<section class="page" data-p="new" data-h="central">
+  <main style="max-width:760px">
+    <a href="#" class="back">← กลับไปรายชื่อ</a>
+    <h1><span class="g">เพิ่ม</span>บุคลากร</h1>
+    <p class="lead">เฉพาะบุคลากร ไม่รวมนักศึกษา</p>
+    <form class="glass pad">
+      <div class="field"><label>อีเมล <span class="req">*</span></label><input class="input" value="chamlong.la@example.ac.th"></div>
+      <div class="callout warn" style="margin:-6px 0 16px">↺ <span>อีเมลนี้เป็นของ <b>นายจำลอง ลาไกล</b> ซึ่งถูกปิดใช้งาน — <a href="#" style="color:inherit">เปิดใช้งานอีกครั้ง</a> แทนการเพิ่มใหม่ เพื่อเก็บประวัติในระบบอื่นไว้</span></div>
+      <div class="field"><label>ชื่อ–สกุล <span class="req">*</span></label><input class="input" placeholder="เช่น ผู้ช่วยศาสตราจารย์ ดร.สมมติ ใจดี"></div>
+      <div class="grid g2" style="gap:0 14px">
+        <div class="field"><label>ตำแหน่ง <span class="req">*</span></label><input class="input" placeholder="เช่น อาจารย์"></div>
+        <div class="field"><label>สังกัด <span class="req">*</span></label><select class="input"><option>เลือกสังกัด…</option><option>สำนักงานคณะ</option><option>หลักสูตรวิทยาการคอมพิวเตอร์</option></select></div>
+      </div>
+      <div class="field"><label>งาน (สายสนับสนุน)</label><select class="input"><option>—</option><option>งานบริหารทั่วไป</option></select></div>
+      <h2 style="margin-top:8px">สิทธิ์เริ่มต้น</h2>
+      <div class="chips" style="margin-bottom:18px"><label class="pill on" style="display:inline-flex;align-items:center;gap:8px"><input type="checkbox" checked class="check">ระบบประเมิน · ผู้ใช้</label><label class="pill" style="display:inline-flex;align-items:center;gap:8px"><input type="checkbox" class="check">ระบบลงเวลา · ผู้ใช้</label></div>
+      <div class="bar" style="justify-content:flex-end;margin:0"><button type="button" class="btn">ยกเลิก</button><button type="button" class="btn btn-primary">เพิ่มบุคลากร</button></div>
+    </form>
+  </main>
+</section>
+
+<!-- ============ ปิดใช้งาน (dialog) ============ -->
+<section class="page" data-p="deactivate" data-h="central" data-tab="0">
+  <main><div class="person"></div><div class="glass pad" style="height:300px"></div></main>
+  <div class="scrim">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dl-t">
+      <h2 id="dl-t">ปิดใช้งาน นางสาวตัวอย่าง รักงาน?</h2>
+      <p class="muted" style="margin:0">ระบบจะล้างสิทธิ์ทุกระบบ และเก็บค่าเดิมไว้ให้คืนได้ภายหลัง ไม่ลบข้อมูล</p>
+      <ul class="impact">
+        <li><span>ระบบประเมิน · ฝ่ายบุคคล</span><span style="color:var(--bad-ink)">เข้าไม่ได้ทันที</span></li>
+        <li><span>ระบบลงเวลา · ผู้ใช้และผู้ดูแล</span><span style="color:var(--warn-ink)">เมื่อเข้าระบบครั้งถัดไป</span></li>
+        <li><span>ระบบรถตู้ · ผู้ดูแล</span><span style="color:var(--warn-ink)">หมดสิทธิ์ผู้ดูแลครั้งถัดไป</span></li>
+      </ul>
+      <div class="field"><label>เหตุผล <span class="req">*</span></label><select class="input"><option>ลาออก</option><option>ย้ายสังกัด</option><option>หมดสัญญา</option><option>อื่น ๆ</option></select></div>
+      <div class="field"><label>วันที่มีผล</label><input class="input" value="8 ต.ค. 2569 (วันนี้)"></div>
+      <div class="actions"><button class="btn">ยกเลิก</button><button class="btn btn-danger" style="background:linear-gradient(135deg,#ff4d6d,#c026d3);color:#fff;border:0">ปิดใช้งาน</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ลบแถวที่เพิ่มผิด (dialog) ============ -->
+<section class="page" data-p="delete" data-h="central">
+  <main>
+    <a href="#" class="back">← กลับไปรายชื่อ</a>
+    <h1 style="font-size:clamp(26px,5vw,38px)">นางสาวใหม่ เพิ่งมา</h1>
+    <div class="glass pad" style="height:300px"></div>
+  </main>
+  <div class="scrim">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="del-t" style="border-color:#ff4d6d66;box-shadow:0 0 60px #ff4d6d33">
+      <h2 id="del-t">ลบ นางสาวใหม่ เพิ่งมา ถาวร?</h2>
+      <p class="muted" style="margin:0">ใช้กับแถวที่เพิ่มผิดหรือซ้ำเท่านั้น ถ้าเป็นคนที่ลาออกให้ใช้ "ปิดใช้งาน"</p>
+      <ul class="impact">
+        <li><span>เพิ่มผ่านระบบนี้</span><span style="color:var(--ok-ink)">✓ 5 ต.ค. 2569</span></li>
+        <li><span>เพิ่มมาไม่เกิน 7 วัน</span><span style="color:var(--ok-ink)">✓ 4 วัน</span></li>
+        <li><span>ไม่มีสิทธิ์ในระบบใด</span><span style="color:var(--ok-ink)">✓</span></li>
+        <li><span>ยังไม่เคยเข้าสู่ระบบนี้ และไม่ได้เป็นผู้ดูแล</span><span style="color:var(--ok-ink)">✓</span></li>
+      </ul>
+      <div class="field"><label for="del-mail">พิมพ์อีเมล <b style="color:#fff">mai.pe@example.ac.th</b> เพื่อยืนยัน</label><input id="del-mail" class="input" autocomplete="off" placeholder="mai.pe@example.ac.th"><span class="hint">ลบแล้วกู้คืนไม่ได้ ข้อมูลเดิมถูกเก็บในบันทึกการใช้งาน</span></div>
+      <div class="actions"><button class="btn">ยกเลิก</button><button class="btn btn-danger" disabled style="opacity:.5">ลบถาวร</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ตั้งสิทธิ์หลายคน ============ -->
+<section class="page" data-p="bulk" data-h="central">
+  <main><h1><span class="g">บุคลากร</span> ทั้งหมด</h1><div class="glass pad" style="height:360px"></div></main>
+  <div class="scrim">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="bk-t" style="border-color:#00e1ff55;box-shadow:0 0 60px #00e1ff33">
+      <h2 id="bk-t">ตั้งสิทธิ์ 12 คน</h2>
+      <div class="field"><label>ระบบ</label><select class="input"><option>ระบบประเมิน</option></select></div>
+      <div class="field"><label>ระดับ</label><select class="input"><option>ผู้ใช้</option></select></div>
+      <ul class="impact">
+        <li><span>เปลี่ยนเป็น "ผู้ใช้"</span><b style="color:var(--cyan-ink)">10 คน</b></li>
+        <li><span>เป็น "ผู้ใช้" อยู่แล้ว</span><span class="faint">2 คน</span></li>
+        <li><span>ข้าม (ปิดใช้งาน)</span><span class="faint">0 คน</span></li>
+      </ul>
+      <div class="actions"><button class="btn">ยกเลิก</button><button class="btn btn-cyan">ยืนยัน 10 คน</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ระบบและผู้ดูแล ============ -->
+<section class="page" data-p="systems" data-h="central" data-nav="systems">
+  <main>
+    <div class="bar" style="justify-content:space-between;margin-bottom:6px"><h1>ระบบและ<span class="g">ผู้ดูแล</span></h1><button class="btn btn-primary" data-go="sys-new">＋ ลงทะเบียนระบบ</button></div>
+    <p class="lead">ระบบที่ใช้ทะเบียนผู้ใช้ร่วมกัน ระดับสิทธิ์ และผู้ที่ตั้งสิทธิ์ของแต่ละระบบได้</p>
+    <div class="grid g2">
+      <div class="glass pad"><div class="bar" style="margin-bottom:8px"><span style="font-size:26px">📝</span><h2 style="margin:0">ระบบประเมิน</h2><span class="chip c-c" style="margin-left:auto">U_evaluation</span></div>
+        <div class="chips" style="margin-bottom:14px"><span class="chip c-off">1 ผู้ใช้</span><span class="chip c-off">50 สร้างการประเมิน</span><span class="chip c-off">80 ฝ่ายบุคคล</span><span class="chip c-off">99 ผู้ดูแลระบบ</span></div>
+        <div class="faint" style="margin-bottom:6px">ผู้ดูแล</div><div class="chips"><span class="chip c-p">นายทดลอง มีสุข ✕</span><button class="btn btn-sm">＋ เพิ่ม</button></div></div>
+      <div class="glass pad" style="border-color:#ff2bd666"><div class="bar" style="margin-bottom:8px"><span style="font-size:26px">⏰</span><h2 style="margin:0"><a href="#" data-go="sys-overview" style="color:#fff">ระบบลงเวลา →</a></h2><span class="chip c-c" style="margin-left:auto">U_checkin</span></div>
+        <div class="chips" style="margin-bottom:14px"><span class="chip c-off">1 ผู้ใช้</span><span class="chip c-off">90 ผู้ใช้และผู้ดูแล</span><span class="chip c-off">99 ผู้ดูแลเท่านั้น</span></div>
+        <div class="faint" style="margin-bottom:6px">ผู้ดูแล</div><div class="chips"><span class="chip c-p">นางสาวตัวอย่าง รักงาน ✕</span><button class="btn btn-sm">＋ เพิ่ม</button></div></div>
+      <div class="glass pad"><div class="bar" style="margin-bottom:8px"><span style="font-size:26px">🚐</span><h2 style="margin:0">ระบบรถตู้</h2><span class="chip c-c" style="margin-left:auto">U_van</span></div>
+        <div class="chips" style="margin-bottom:8px"><span class="chip c-off">1 ผู้ใช้</span><span class="chip c-off">99 ผู้ดูแล</span></div><p class="faint" style="margin:0 0 12px">ฝั่งผู้ใช้เปิดให้ทุกคนที่มีบัญชี 365</p>
+        <div class="faint" style="margin-bottom:6px">ผู้ดูแล</div><div class="chips"><span class="chip c-p">นางสาวตัวอย่าง รักงาน ✕</span><button class="btn btn-sm">＋ เพิ่ม</button></div></div>
+      <div class="glass pad"><div class="bar" style="margin-bottom:8px"><span style="font-size:26px">🎟️</span><h2 style="margin:0">ระบบลงทะเบียน</h2><span class="chip c-c" style="margin-left:auto">U_register</span></div>
+        <div class="chips" style="margin-bottom:10px"><span class="chip c-off">1 ระดับ 1</span><span class="chip c-off">90 ระดับ 90</span></div>
+        <div class="callout warn" style="margin-bottom:12px">⚠ <span>ยังไม่ยืนยันความหมายของระดับ ตั้งชื่อได้ในแท็บระดับสิทธิ์</span></div>
+        <div class="faint" style="margin-bottom:6px">ผู้ดูแล</div><div class="chips"><span class="faint">ยังไม่มี</span><button class="btn btn-sm">＋ เพิ่ม</button></div></div>
+      <div class="glass pad"><div class="bar" style="margin-bottom:8px"><span style="font-size:26px">📖</span><h2 style="margin:0">ห้องสมุด</h2><span class="chip c-v" style="margin-left:auto">ตารางกลาง · library</span></div>
+        <div class="chips" style="margin-bottom:8px"><span class="chip c-off">1 ผู้ใช้</span><span class="chip c-off">99 ผู้ดูแล</span></div><p class="faint" style="margin:0 0 12px">เพิ่มจากหน้าจอ ไม่ต้องแก้ตาราง</p>
+        <div class="faint" style="margin-bottom:6px">ผู้ดูแล</div><div class="chips"><span class="chip c-p">นายสมศักดิ์ ทดสอบ ✕</span><button class="btn btn-sm">＋ เพิ่ม</button></div></div>
+    </div>
+  </main>
+</section>
+
+<!-- ============ ลงทะเบียนระบบใหม่ ============ -->
+<section class="page" data-p="sys-new" data-h="central" data-nav="systems">
+  <main style="max-width:760px">
+    <a href="#" class="back" data-go="systems">← ระบบทั้งหมด</a>
+    <h1>ลงทะเบียน<span class="g">ระบบใหม่</span></h1>
+    <p class="lead">บันทึกแล้วใช้ได้ทันที ไม่ต้องแก้ตารางหรือรอผู้พัฒนา</p>
+    <form class="glass pad">
+      <div class="grid g2" style="gap:0 14px">
+        <div class="field"><label for="n-name">ชื่อที่แสดง <span class="req">*</span></label><input id="n-name" class="input" value="ห้องสมุด"></div>
+        <div class="field"><label for="n-key">key <span class="req">*</span></label><input id="n-key" class="input" value="library" style="font-family:ui-monospace,Consolas,monospace"><span class="hint">a–z ตัวเลข และ _ · <b style="color:var(--warn-ink)">ตั้งแล้วแก้ไม่ได้</b> เพราะเว็บใช้ในโค้ด</span></div>
+      </div>
+      <div class="field"><label>ไอคอน</label><div class="chips"><button type="button" class="pill on" style="font-size:20px" aria-label="หนังสือ">📖</button><button type="button" class="pill" style="font-size:20px" aria-label="ชั้นหนังสือ">📚</button><button type="button" class="pill" style="font-size:20px" aria-label="แฟ้ม">🗂️</button><button type="button" class="pill" style="font-size:20px" aria-label="กล่อง">📦</button></div></div>
+      <div class="field"><label for="n-url">ลิงก์ไปยังระบบ</label><input id="n-url" class="input" value="https://service.ict.up.ac.th/library"></div>
+      <div class="field"><label for="n-note">หมายเหตุบนหน้าจอ</label><input id="n-note" class="input" placeholder="เช่น มีผลทันที"></div>
+      <h2 style="margin-top:8px">ระดับสิทธิ์</h2>
+      <div class="glass" style="margin-bottom:12px">
+        <div class="lv-row faint" style="font-size:13px"><span></span><span>ค่า</span><span>ชื่อที่แสดง</span><span class="desc-col">คำอธิบาย</span><span></span></div>
+        <div class="lv-row"><span class="drag" aria-hidden="true">⋮⋮</span><input class="input" value="1" aria-label="ค่าระดับที่ 1"><input class="input" value="ผู้ใช้" aria-label="ชื่อระดับที่ 1"><input class="input desc-col" value="ยืมคืนหนังสือ" aria-label="คำอธิบายระดับที่ 1"><button type="button" class="icon-btn" aria-label="ลบระดับที่ 1">✕</button></div>
+        <div class="lv-row"><span class="drag" aria-hidden="true">⋮⋮</span><input class="input" value="99" aria-label="ค่าระดับที่ 2"><input class="input" value="ผู้ดูแล" aria-label="ชื่อระดับที่ 2"><input class="input desc-col" value="จัดการหนังสือและผู้ใช้" aria-label="คำอธิบายระดับที่ 2"><button type="button" class="icon-btn" aria-label="ลบระดับที่ 2">✕</button></div>
+        <div class="lv-row"><span></span><span class="faint" style="grid-column:2 / -1">ไม่มีสิทธิ์ = ไม่มีแถว แก้ไม่ได้ · แนะนำให้ใช้ 99 เป็นผู้ดูแลเหมือนระบบอื่น</span></div>
+      </div>
+      <button type="button" class="btn btn-sm" style="margin-bottom:18px">＋ เพิ่มระดับ</button>
+      <div class="callout info" style="margin-bottom:16px">ℹ️ <span>หลังบันทึก ไปที่แท็บ <b>วิธีเชื่อมต่อ</b> เพื่อดู SQL ให้นักพัฒนาของเว็บนี้ และขอบัญชี <code>ro_library</code> จากผู้พัฒนา</span></div>
+      <div class="bar" style="justify-content:flex-end;margin:0"><button type="button" class="btn" data-go="systems">ยกเลิก</button><button type="button" class="btn btn-primary">ลงทะเบียนระบบ</button></div>
+    </form>
+  </main>
+</section>
+
+<!-- ============ หน้าของแต่ละระบบ ============ -->
+<template id="sys-head">
+  <a href="#" class="back" data-go="systems">← ระบบทั้งหมด</a>
+  <div class="bar" style="justify-content:space-between;align-items:flex-start">
+    <div style="display:flex;gap:16px;align-items:center">
+      <div class="logo" style="width:64px;height:64px;border-radius:20px;font-size:32px;background:linear-gradient(135deg,#00e1ff33,#ff2bd633);border:1px solid #ffffff26">⏰</div>
+      <div>
+        <h1 style="font-size:clamp(28px,5vw,40px);margin:0">ระบบ<span class="g">ลงเวลา</span></h1>
+        <div class="chips" style="margin-top:6px"><span class="chip c-ok">● ใช้งาน</span><span class="chip c-c">U_checkin</span><a href="#" class="faint" style="color:var(--cyan-ink)">service.ict.up.ac.th/checkin ↗</a></div>
+      </div>
+    </div>
+  </div>
+  <nav class="tabs" style="margin-top:18px"><a href="#" data-go="sys-overview">ภาพรวม</a><a href="#" data-go="sys-people">ผู้ใช้ (78)</a><a href="#" data-go="sys-levels">ระดับสิทธิ์</a><a href="#" data-go="sys-connect">วิธีเชื่อมต่อ</a><a href="#" data-go="sys-settings">ตั้งค่า</a></nav>
+</template>
+<style>
+  .lvbar { display: grid; grid-template-columns: 170px 1fr 48px; gap: 12px; align-items: center; padding: 8px 0; font-size: 14px; }
+  .lvbar .track { height: 12px; border-radius: 999px; background: #ffffff10; overflow: hidden; }
+  .lvbar .fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--pink), var(--cyan)); box-shadow: 0 0 14px #ff2bd677; }
+  .lvbar b { text-align: right; }
+  .person-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid #ffffff14; }
+  .person-row:first-of-type { border-top: 0; }
+  .av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; background: linear-gradient(135deg, var(--pink), var(--violet)); flex: none; }
+  .lv-row { display: grid; grid-template-columns: 32px 90px 1fr 1fr 44px; gap: 10px; align-items: center; padding: 10px 16px; border-top: 1px solid #ffffff14; }
+  .lv-row:first-child { border-top: 0; }
+  .drag { color: var(--faint); cursor: grab; text-align: center; }
+  .icon-btn { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--bad-ink); }
+  .toggle { width: 52px; height: 30px; border-radius: 999px; background: linear-gradient(135deg, var(--pink), var(--cyan)); position: relative; border: 0; flex: none; }
+  .toggle::after { content: ""; position: absolute; top: 3px; right: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; }
+  @media (max-width: 820px) { .lvbar { grid-template-columns: 1fr 48px; } .lvbar .track { grid-column: 1 / -1; order: 3; } .lv-row { grid-template-columns: 70px 1fr 44px; } .lv-row .drag, .lv-row .desc-col { display: none; } }
+</style>
+
+<section class="page" data-p="sys-overview" data-h="central" data-nav="systems" data-stab="0">
+  <main>
+    <div class="syshead"></div>
+    <div class="grid g3" style="margin-bottom:14px">
+      <div class="glass stat"><b class="glow-p">78</b>คนมีสิทธิ์</div>
+      <div class="glass stat"><b>6</b>ผู้ดูแลในระบบ (90, 99)</div>
+      <div class="glass stat"><b class="glow-c">2</b>ผู้ดูแลที่ตั้งสิทธิ์ได้</div>
+      <div class="glass stat"><b style="color:var(--warn-ink)">1</b>ค่าไม่อยู่ในรายการ</div>
+    </div>
+    <div class="grid g2">
+      <div class="glass pad">
+        <h2>จำนวนคนตามระดับ</h2>
+        <div class="lvbar"><span>ผู้ใช้ <span class="faint">(1)</span></span><div class="track"><div class="fill" style="width:92%"></div></div><b>72</b></div>
+        <div class="lvbar"><span>ผู้ใช้และผู้ดูแล <span class="faint">(90)</span></span><div class="track"><div class="fill" style="width:6%"></div></div><b>5</b></div>
+        <div class="lvbar"><span>ผู้ดูแลเท่านั้น <span class="faint">(99)</span></span><div class="track"><div class="fill" style="width:2%"></div></div><b>1</b></div>
+        <div class="lvbar"><span style="color:var(--warn-ink)">ค่าอื่น <span class="faint">(5)</span></span><div class="track"><div class="fill" style="width:2%;background:var(--warn);box-shadow:none"></div></div><b>1</b></div>
+        <div class="lvbar"><span class="faint">ไม่มีสิทธิ์</span><div class="track"><div class="fill" style="width:15%;background:#ffffff33;box-shadow:none"></div></div><b class="faint">14</b></div>
+        <p class="faint" style="margin:10px 0 0">กดแต่ละแถวเพื่อดูรายชื่อในระดับนั้น</p>
+      </div>
+      <div class="grid" style="align-content:start">
+        <div class="glass pad">
+          <div class="bar" style="justify-content:space-between;margin-bottom:6px"><h2 style="margin:0">ผู้ดูแลที่ตั้งสิทธิ์ได้</h2><button class="btn btn-sm">＋ เพิ่ม</button></div>
+          <p class="faint" style="margin:0 0 8px">ตั้งสิทธิ์ของระบบนี้ให้คนอื่นได้ในระบบจัดการผู้ใช้</p>
+          <div class="person-row"><div class="av">ต</div><div style="flex:1"><div class="name">นางสาวตัวอย่าง รักงาน</div><div class="sub">ตั้งเมื่อ 1 ก.ย. 2569</div></div><button class="btn btn-sm btn-danger">ถอน</button></div>
+          <div class="person-row"><div class="av" style="background:linear-gradient(135deg,var(--cyan),#3b82f6)">ส</div><div style="flex:1"><div class="name">นายสมศักดิ์ ทดสอบ</div><div class="sub">ตั้งเมื่อ 3 ก.ย. 2569</div></div><button class="btn btn-sm btn-danger">ถอน</button></div>
+        </div>
+        <div class="glass pad">
+          <div class="bar" style="justify-content:space-between;margin-bottom:6px"><h2 style="margin:0">เปลี่ยนแปลงล่าสุด</h2><a href="#" data-go="audit" style="font-size:14px">ดูทั้งหมด</a></div>
+          <div class="person-row"><div style="flex:1"><div style="font-size:14px"><b>อาจารย์ ดร.สมมติ ใจดี</b> <span class="diff"><s>ไม่มีสิทธิ์</s> → <ins>ผู้ใช้</ins></span></div><div class="sub">7 ต.ค. 2569 · โดย นางสาวตัวอย่าง รักงาน</div></div></div>
+          <div class="person-row"><div style="flex:1"><div style="font-size:14px"><b>นายจำลอง ลาไกล</b> <span class="diff"><s>ผู้ใช้</s> → <ins>ปิดใช้งาน</ins></span></div><div class="sub">8 ต.ค. 2569 · โดย นายทดลอง มีสุข</div></div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</section>
+
+<section class="page" data-p="sys-people" data-h="central" data-nav="systems" data-stab="1">
+  <main>
+    <div class="syshead"></div>
+    <div class="bar">
+      <input class="input grow" placeholder="ค้นหาชื่อหรืออีเมล…" aria-label="ค้นหา">
+      <button class="pill on">ทั้งหมด 78</button><button class="pill">ผู้ใช้ 72</button><button class="pill">ผู้ใช้และผู้ดูแล 5</button><button class="pill">ผู้ดูแลเท่านั้น 1</button><button class="pill">ไม่มีสิทธิ์ 14</button>
+    </div>
+    <div class="glass" style="padding:4px;overflow-x:auto">
+      <table>
+        <thead><tr><th style="width:44px"><input type="checkbox" class="check" aria-label="เลือกทั้งหมด"></th><th>ชื่อ</th><th class="hide-sm">สังกัด</th><th>สิทธิ์ระบบลงเวลา</th></tr></thead>
+        <tbody>
+          <tr><td><input type="checkbox" class="check" aria-label="เลือก" checked></td><td><div class="name">อาจารย์ ดร.สมมติ ใจดี</div><div class="sub">sommut.ja@example.ac.th</div></td><td class="hide-sm">หลักสูตรวิทยาการคอมพิวเตอร์</td><td><select class="input" aria-label="สิทธิ์"><option>ผู้ใช้</option><option>ผู้ใช้และผู้ดูแล</option><option>ผู้ดูแลเท่านั้น</option><option>ไม่มีสิทธิ์</option></select></td></tr>
+          <tr><td><input type="checkbox" class="check" aria-label="เลือก" checked></td><td><div class="name">ผู้ช่วยศาสตราจารย์สมนึก ตั้งใจ</div><div class="sub">somnuek.ta@example.ac.th</div></td><td class="hide-sm">หลักสูตรวิศวกรรมซอฟต์แวร์</td><td><select class="input" aria-label="สิทธิ์"><option>ผู้ใช้</option></select></td></tr>
+          <tr><td><input type="checkbox" class="check" aria-label="เลือก"></td><td><div class="name">นางสาวตัวอย่าง รักงาน</div><div class="sub">tuayang.ra@example.ac.th</div></td><td class="hide-sm">สำนักงานคณะ</td><td><select class="input" aria-label="สิทธิ์"><option>ผู้ใช้และผู้ดูแล</option></select></td></tr>
+          <tr><td><input type="checkbox" class="check" aria-label="เลือก"></td><td><div class="name">นายพิเศษ ค่าแปลก</div><div class="sub">phiset.kh@example.ac.th</div></td><td class="hide-sm">สำนักงานคณะ</td><td><select class="input" aria-label="สิทธิ์" style="border-color:#ffd23d88"><option>ค่าอื่น (5) — คงเดิม</option><option>ผู้ใช้</option></select></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="bulk"><span>เลือก <b>2</b> คน</span><select class="input" aria-label="ตั้งเป็น" style="min-height:44px"><option>ตั้งเป็น: ผู้ใช้และผู้ดูแล</option></select><span style="margin-left:auto;display:flex;gap:8px"><button class="btn">ยกเลิก</button><button class="btn btn-primary">ตั้งสิทธิ์ 2 คน</button></span></div>
+  </main>
+</section>
+
+<section class="page" data-p="sys-levels" data-h="central" data-nav="systems" data-stab="2">
+  <main>
+    <div class="syshead"></div>
+    <div class="callout info" style="margin-bottom:14px">ℹ️ <span>ระดับต้องตรงกับที่โค้ดของระบบลงเวลาตรวจจริง แก้ชื่อเรียกได้ แต่ตัวเลขควรแก้คู่กับผู้พัฒนาระบบนั้น</span></div>
+    <div class="glass">
+      <div class="lv-row faint" style="font-size:13px"><span></span><span>ค่า</span><span>ชื่อที่แสดง</span><span class="desc-col">คำอธิบาย</span><span></span></div>
+      <div class="lv-row"><span class="drag" aria-hidden="true">⋮⋮</span><input class="input" value="1" aria-label="ค่า"><input class="input" value="ผู้ใช้" aria-label="ชื่อ"><input class="input desc-col" value="ลงเวลาเข้า–ออกงาน" aria-label="คำอธิบาย"><button class="icon-btn" aria-label="ลบระดับ">✕</button></div>
+      <div class="lv-row"><span class="drag" aria-hidden="true">⋮⋮</span><input class="input" value="90" aria-label="ค่า"><input class="input" value="ผู้ใช้และผู้ดูแล" aria-label="ชื่อ"><input class="input desc-col" value="ลงเวลาได้ และอนุมัติ/ดูรายงาน" aria-label="คำอธิบาย"><button class="icon-btn" aria-label="ลบระดับ">✕</button></div>
+      <div class="lv-row"><span class="drag" aria-hidden="true">⋮⋮</span><input class="input" value="99" aria-label="ค่า"><input class="input" value="ผู้ดูแลเท่านั้น" aria-label="ชื่อ"><input class="input desc-col" value="เข้าได้เฉพาะฝั่งผู้ดูแล" aria-label="คำอธิบาย"><button class="icon-btn" aria-label="ลบระดับ">✕</button></div>
+      <div class="lv-row"><span></span><span class="faint" style="grid-column:2 / -1">ไม่มีสิทธิ์ = ค่าว่าง (NULL) เสมอ แก้ไม่ได้</span></div>
+    </div>
+    <div class="bar" style="justify-content:space-between;margin-top:14px"><button class="btn">＋ เพิ่มระดับ</button><span style="display:flex;gap:8px"><button class="btn">ยกเลิก</button><button class="btn btn-primary">บันทึก</button></span></div>
+    <div class="callout warn" style="margin-top:14px">⚠ <span>ลบระดับที่ยังมีคนใช้อยู่ไม่ได้ (ระดับ 90 มี 5 คน) ต้องย้ายคนไประดับอื่นก่อน</span></div>
+  </main>
+</section>
+
+<section class="page" data-p="sys-connect" data-h="central" data-nav="systems" data-stab="3">
+  <main>
+    <div class="syshead"></div>
+    <div class="callout info" style="margin-bottom:14px">ℹ️ <span>ระบบลงเวลายังอ่านจากคอลัมน์ <b>U_checkin</b> ได้ตามเดิม ไม่ต้องแก้ ถ้าต้องการเปลี่ยนมาอ่าน view ด้านล่างก็ทำได้โดยไม่ต้องย้ายข้อมูล</span></div>
+    <div class="glass pad">
+      <div class="bar" style="justify-content:space-between"><h2 style="margin:0">อ่านสิทธิ์ของผู้ใช้ (เว็บบนเซิร์ฟเวอร์เดียวกัน)</h2><button class="btn btn-sm btn-cyan">คัดลอก</button></div>
+      <pre style="margin:0;padding:16px;border-radius:14px;background:#05030c;border:1px solid var(--line);overflow-x:auto;font-size:13px;line-height:1.6;color:#d6d0ff"><code>SELECT U_id, U_name, level
+FROM `user`.`v_roles`
+WHERE system_key = <span style="color:var(--pink-ink)">'checkin'</span> AND U_email = ?;
+<span style="color:var(--faint)">-- ไม่ได้แถว = ไม่มีสิทธิ์ · คนที่ปิดใช้งานไม่อยู่ใน view</span></code></pre>
+      <dl class="kv" style="margin-top:16px"><dt>key ของระบบ</dt><dd><code style="color:var(--pink-ink)">checkin</code></dd><dt>บัญชีฐานข้อมูล</dt><dd><code>ro_checkin</code> <span class="chip c-warn">ยังไม่ได้สร้าง · ขอผู้พัฒนา</span></dd><dt>ระดับ</dt><dd>1 ผู้ใช้ · 90 ผู้ใช้และผู้ดูแล · 99 ผู้ดูแลเท่านั้น</dd><dt>คำแนะนำ</dt><dd>อ่านสิทธิ์ทุก request หรือ cache ไม่เกิน 5 นาที</dd></dl>
+    </div>
+    <div class="callout info" style="margin-top:14px">🌐 <span>เว็บที่อยู่นอกเซิร์ฟเวอร์นี้ใช้ API อ่านอย่างเดียวแทน (ยังไม่เปิด จะทำเมื่อมีเว็บแบบนี้)</span></div>
+  </main>
+</section>
+
+<section class="page" data-p="sys-settings" data-h="central" data-nav="systems" data-stab="4">
+  <main>
+    <div class="syshead"></div>
+    <div class="grid g2">
+      <form class="glass pad">
+        <h2>ข้อมูลระบบ</h2>
+        <div class="field"><label>ชื่อที่แสดง <span class="req">*</span></label><input class="input" value="ระบบลงเวลา"></div>
+        <div class="field"><label>ไอคอน</label><div class="chips"><button type="button" class="pill on" style="font-size:20px">⏰</button><button type="button" class="pill" style="font-size:20px">🕘</button><button type="button" class="pill" style="font-size:20px">✅</button><button type="button" class="pill" style="font-size:20px">📍</button></div></div>
+        <div class="field"><label>ลิงก์ไปยังระบบ</label><input class="input" value="https://service.ict.up.ac.th/checkin"></div>
+        <div class="field"><label>หมายเหตุบนหน้าจอ</label><input class="input" value="มีผลเมื่อผู้ใช้เข้าสู่ระบบครั้งถัดไป"><span class="hint">แสดงใต้ชื่อระบบในหน้าสิทธิ์รายคน</span></div>
+        <div class="field"><label>คอลัมน์ในตาราง user</label><input class="input" value="U_checkin" disabled style="opacity:.6"><span class="hint">แก้ไม่ได้ — ผู้พัฒนาเพิ่มคอลัมน์และสิทธิ์ฐานข้อมูลเอง</span></div>
+        <div class="bar" style="justify-content:flex-end;margin:0"><button type="button" class="btn">ยกเลิก</button><button type="button" class="btn btn-primary">บันทึก</button></div>
+      </form>
+      <div class="grid" style="align-content:start">
+        <div class="glass pad">
+          <div class="bar" style="margin:0;justify-content:space-between"><div><h2 style="margin:0 0 4px">แสดงในหน้าจอ</h2><p class="faint" style="margin:0">ปิดเมื่อเลิกใช้ระบบนี้ ซ่อนจากหน้าจอแต่การปิดใช้งานผู้ใช้ยังล้างคอลัมน์นี้</p></div><button class="toggle" role="switch" aria-checked="true" aria-label="แสดงในหน้าจอ"></button></div>
+        </div>
+        <div class="glass pad" style="border-color:#ff4d6d55">
+          <h2 style="color:var(--bad-ink)">ล้างสิทธิ์ทั้งระบบ</h2>
+          <p class="faint" style="margin:0 0 12px">ตั้งทุกคนเป็น "ไม่มีสิทธิ์" ใช้เมื่อปิดระบบถาวร ค่าเดิมของทุกคนถูกเก็บในบันทึกการใช้งาน</p>
+          <button class="btn btn-danger">ล้างสิทธิ์ 78 คน…</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</section>
+
+<!-- ============ บันทึกการใช้งาน ============ -->
+<section class="page" data-p="audit" data-h="central" data-nav="audit">
+  <main>
+    <h1>บันทึก<span class="g">การใช้งาน</span></h1>
+    <p class="lead">ทุกการเปลี่ยนแปลง แก้หรือลบไม่ได้</p>
+    <div class="bar">
+      <input class="input grow" placeholder="ค้นหาชื่อผู้แก้หรือผู้ถูกแก้…" aria-label="ค้นหา">
+      <select class="input" aria-label="ระบบ"><option>ทุกระบบ</option><option>ระบบประเมิน</option></select>
+      <select class="input" aria-label="การกระทำ"><option>ทุกการกระทำ</option><option>ตั้งสิทธิ์</option><option>ปิดใช้งาน</option><option>ข้อมูลอ่อนไหว</option></select>
+      <input class="input" value="1–8 ต.ค. 2569" aria-label="ช่วงวันที่" style="width:170px">
+    </div>
+    <div class="glass">
+      <div class="log"><time>8 ต.ค. 2569<br>10:12</time><div><span class="chip c-p">ปิดใช้งาน</span> <b>นายจำลอง ลาไกล</b> <span class="faint">โดย นายทดลอง มีสุข</span><div class="diff">เหตุผล: ลาออก · ล้างสิทธิ์ 2 ระบบ</div></div></div>
+      <div class="log"><time>7 ต.ค. 2569<br>16:45</time><div><span class="chip c-c">ตั้งสิทธิ์หลายคน</span> <b>ระบบประเมิน</b> 10 คน <span class="faint">โดย นายทดลอง มีสุข</span><div class="diff"><s>ไม่มีสิทธิ์</s> → <ins>ผู้ใช้</ins></div></div></div>
+      <div class="log"><time>7 ต.ค. 2569<br>11:03</time><div><span class="chip c-v">ตั้งสิทธิ์</span> <b>อาจารย์ ดร.สมมติ ใจดี</b> · ระบบลงเวลา <span class="faint">โดย นางสาวตัวอย่าง รักงาน</span><div class="diff"><s>ไม่มีสิทธิ์</s> → <ins>ผู้ใช้</ins></div></div></div>
+      <div class="log"><time>6 ต.ค. 2569<br>09:30</time><div><span class="chip c-warn">🔒 แสดงข้อมูล</span> <b>นางสาวตัวอย่าง รักงาน</b> · เบอร์โทร <span class="faint">โดย นายทดลอง มีสุข</span></div></div>
+      <div class="log"><time>5 ต.ค. 2569<br>13:22</time><div><span class="chip c-ok">เพิ่มบุคลากร</span> <b>นางสาวใหม่ เพิ่งมา</b> <span class="faint">โดย นายทดลอง มีสุข</span></div></div>
+    </div>
+    <div class="pager"><button aria-label="ก่อนหน้า">‹</button><button class="on">1</button><button>2</button><button>3</button><button aria-label="ถัดไป">›</button></div>
+  </main>
+</section>
+
+<!-- ============ วิธีใช้ ============ -->
+<section class="page" data-p="help" data-h="central" data-nav="none">
+  <main style="max-width:860px">
+    <h1><span class="g">วิธีใช้</span></h1>
+    <nav class="tabs"><a href="#" class="on">ผู้ดูแลระบบ</a><a href="#">ผู้ดูแลกลาง</a><a href="#">คำถามพบบ่อย</a></nav>
+    <div class="glass pad" style="margin-bottom:14px">
+      <h2>ให้สิทธิ์คนเข้าใช้ระบบของท่าน</h2>
+      <ol class="steps">
+        <li><span>เปิดหน้า <b>บุคลากร</b> ค้นหาชื่อหรืออีเมล</span></li>
+        <li><span>เลือกระดับในช่อง <b>สิทธิ์</b> ของคนนั้น (ท่านเห็นเฉพาะระบบที่ท่านดูแล)</span></li>
+        <li><span>กด <b>บันทึก</b> — ระบบส่วนใหญ่มีผลเมื่อผู้ใช้เข้าสู่ระบบครั้งถัดไป</span></li>
+      </ol>
+    </div>
+    <div class="callout info">💬 <span>ชื่อ ตำแหน่ง หรืออีเมลผิด แจ้ง หน่วยเทคโนโลยีสารสนเทศ คณะเทคโนโลยีสารสนเทศและการสื่อสาร</span></div>
+  </main>
+</section>
+
+<!-- ============ ไม่พบหน้า ============ -->
+<section class="page" data-p="notfound">
+  <div class="grid-bg"></div>
+  <div class="login"><div style="text-align:center"><div class="big404">404</div><h1 style="font-size:28px">ไม่พบหน้านี้</h1><p class="lead">หน้าอาจถูกย้าย หรือท่านไม่มีสิทธิ์เปิด</p><a href="#" class="btn btn-primary">กลับหน้ารายชื่อ</a></div></div>
+</section>
+
+<script>
+  const central = document.getElementById("hdr-central").innerHTML;
+  const sys = document.getElementById("hdr-sys").innerHTML;
+  const person = document.getElementById("person-head").innerHTML;
+  const syshead = document.getElementById("sys-head").innerHTML;
+  document.querySelectorAll(".syshead").forEach(s => {
+    s.innerHTML = syshead;
+    s.querySelectorAll(".tabs a")[+s.closest(".page").dataset.stab].classList.add("on");
+  });
+  document.querySelectorAll(".page").forEach(p => {
+    if (p.dataset.h) p.insertAdjacentHTML("afterbegin", p.dataset.h === "sys" ? sys : central);
+    const nav = p.dataset.nav;
+    if (nav) p.querySelectorAll(".nav a").forEach(a => a.classList.toggle("on", a.dataset.n === nav));
+    const slot = p.querySelector(".person");
+    if (slot) { slot.innerHTML = person; slot.querySelectorAll(".tabs a")[+p.dataset.tab].classList.add("on"); }
+  });
+  const go = k => {
+    document.querySelectorAll(".switcher button").forEach(x => x.setAttribute("aria-pressed", x.dataset.p === k));
+    document.querySelectorAll(".page").forEach(s => s.classList.toggle("on", s.dataset.p === k));
+    window.scrollTo(0, 0);
+  };
+  document.querySelectorAll(".switcher button").forEach(b => b.addEventListener("click", () => go(b.dataset.p)));
+  document.addEventListener("click", e => { const t = e.target.closest("[data-go]"); if (t) { e.preventDefault(); go(t.dataset.go); } });
+</script>
+</body>
+</html>
