@@ -18,7 +18,8 @@ permissions:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, Windows, users]
+    # repo นี้มี runner ตัวเดียวบน SVR-ICT-SERVICE (C:ctions-runnerSers)
+    runs-on: [self-hosted, Windows]
     timeout-minutes: 30
     defaults:
       run:

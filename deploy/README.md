@@ -61,7 +61,7 @@ cd C:\temp\users-ICT
 ### 6. GitHub runner
 GitHub → repo `users-ICT` → Settings → Actions → Runners → New self-hosted runner → Windows x64 ทำตามคำสั่งที่หน้านั้นให้ แต่ติดตั้งที่ `C:\actions-runner\users` และตอน `config.cmd`:
 
-- labels: ใส่ `users` (workflow เลือก runner ด้วย `self-hosted, Windows, users`)
+- labels: กด Enter ข้ามได้ (workflow ใช้ `self-hosted, Windows` เพราะ repo นี้มี runner ตัวเดียว)
 - Run as service: **Y**
 - บัญชีของ service: ใส่ `NT AUTHORITY\SYSTEM` — ต้องหยุด/เริ่ม service `users` และอ่าน `.env` ได้ (บัญชีปริยาย NETWORK SERVICE ทำไม่ได้)
 
