@@ -130,7 +130,10 @@ select.input option { background: var(--option-bg); }
 .nav-link { min-height: 44px; display: inline-flex; align-items: center; padding: 0 14px; border-radius: var(--r-md); color: var(--muted); text-decoration: none; font-size: 15px; }
 .nav-link:hover { color: #fff; }
 .nav-link[aria-current="page"] { color: #fff; background: var(--glass-2); box-shadow: inset 0 -2px 0 var(--pink); }
-.logo { width: 40px; height: 40px; border-radius: var(--r-md); background: var(--pink-strong); display: grid; place-items: center; font-weight: 800; flex: none; color: #fff; text-decoration: none; }
+/* ตราคณะบนพื้นขาว เพราะตัวอักษรในตราเป็นสีเข้ม (5.6) */
+.logo { width: 40px; height: 40px; border-radius: var(--r-md); background: #fff; display: grid; place-items: center; padding: 3px; flex: none; overflow: hidden; }
+.logo img { display: block; width: auto; height: auto; max-width: 100%; max-height: 100%; min-height: 0; }
+.logo-lg { width: 88px; height: 88px; border-radius: 22px; padding: 8px; }
 
 /* แท็บ (5.7) */
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; }

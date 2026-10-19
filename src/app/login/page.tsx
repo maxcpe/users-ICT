@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
 import { withBasePath } from "@/lib/base-path";
 import { loadActor } from "@/lib/access";
 import { isLoginDenyReason, LOGIN_ERROR_TEXT } from "@/lib/login-rules";
 import { IconAlert } from "@/components/icons";
+import ictLogo from "../../../public/ict-logo.png";
 
 export const metadata: Metadata = { title: "เข้าสู่ระบบ" };
 
@@ -22,7 +24,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   return (
     <div className="relative grid min-h-screen place-items-center px-4 py-6">
             <main id="main" className="glass above w-full max-w-[440px] px-7 py-8 text-center">
-        <div className="logo mx-auto mb-[18px] !h-[72px] !w-[72px] !rounded-[22px] text-[32px]" aria-hidden="true">U</div>
+        <div className="logo logo-lg mx-auto mb-[18px]"><Image src={ictLogo} alt="ตราคณะเทคโนโลยีสารสนเทศและการสื่อสาร" unoptimized priority /></div>
         <h1 className="h1 !text-[34px]">ระบบจัดการผู้ใช้</h1>
         <p className="lead !mb-[26px]">คณะเทคโนโลยีสารสนเทศและการสื่อสาร<br />มหาวิทยาลัยพะเยา</p>
 

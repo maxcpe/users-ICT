@@ -1,9 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "@/auth";
 import { withBasePath } from "@/lib/base-path";
 import type { Actor } from "@/lib/roles";
 import { MobileMenu, NavLinks, type NavItem } from "./mobile-menu";
 import { IconShield, IconWrench } from "@/components/icons";
+import ictLogo from "../../public/ict-logo.png";
 
 export function Header({ actor, systems }: { actor: Actor; systems: { key: string; name: string }[] }) {
   const central = actor.role === "central";
@@ -31,7 +33,7 @@ export function Header({ actor, systems }: { actor: Actor; systems: { key: strin
   return (
     <header className="above mx-auto flex max-w-[1120px] items-center gap-3 p-4">
       <a href="#main" className="skip">ข้ามไปเนื้อหา</a>
-      <Link href="/" className="logo" aria-label="หน้าแรก ระบบจัดการผู้ใช้">U</Link>
+      <Link href="/" className="logo" aria-label="หน้าแรก ระบบจัดการผู้ใช้"><Image src={ictLogo} alt="" unoptimized priority /></Link>
       <span className="font-bold">ระบบจัดการผู้ใช้</span>
       <nav aria-label="เมนูหลัก" className="ml-5 hidden gap-1 min-[821px]:flex">
         <NavLinks items={items} />
