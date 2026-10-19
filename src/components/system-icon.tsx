@@ -1,0 +1,65 @@
+// ไอคอนของระบบ (design.md 5.18) — ชื่อที่ไม่รู้จัก (รวมอีโมจิเก่า) แสดงเป็นไอคอนกล่อง ไม่แสดงอีโมจิ
+import {
+  Award,
+  BookOpen,
+  Box,
+  BrainCircuit,
+  Briefcase,
+  Building2,
+  Bus,
+  Calendar,
+  Car,
+  ChartColumn,
+  ClipboardCheck,
+  Clock,
+  FileText,
+  FlaskConical,
+  GraduationCap,
+  Laptop,
+  Library,
+  Mail,
+  Megaphone,
+  NotebookPen,
+  Presentation,
+  ShieldCheck,
+  Ticket,
+  Trophy,
+  Users,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
+import type { SystemIconKey } from "@/lib/system-icons";
+
+const MAP: Record<SystemIconKey, LucideIcon> = {
+  "clipboard-check": ClipboardCheck,
+  clock: Clock,
+  bus: Bus,
+  car: Car,
+  presentation: Presentation,
+  building: Building2,
+  "book-open": BookOpen,
+  library: Library,
+  ticket: Ticket,
+  trophy: Trophy,
+  award: Award,
+  "notebook-pen": NotebookPen,
+  "chart-column": ChartColumn,
+  "brain-circuit": BrainCircuit,
+  "graduation-cap": GraduationCap,
+  users: Users,
+  "shield-check": ShieldCheck,
+  "file-text": FileText,
+  briefcase: Briefcase,
+  calendar: Calendar,
+  flask: FlaskConical,
+  laptop: Laptop,
+  mail: Mail,
+  megaphone: Megaphone,
+  wallet: Wallet,
+  box: Box,
+};
+
+export function SystemIcon({ name, className = "" }: { name: string | null | undefined; className?: string }) {
+  const Icon = (name && MAP[name as SystemIconKey]) || Box;
+  return <Icon aria-hidden="true" focusable="false" strokeWidth={1.75} className={`ic ${className}`.trim()} />;
+}

@@ -6,6 +6,7 @@ import { countHolders } from "@/lib/registry";
 import { canViewSystem, isCentral } from "@/lib/roles";
 import { getSystem } from "@/lib/system-repo";
 import { IconAlert, IconMoon } from "@/components/icons";
+import { SystemIcon } from "@/components/system-icon";
 
 export default async function SystemLayout({ children, params }: { children: React.ReactNode; params: Promise<{ key: string }> }) {
   const { key } = await params;
@@ -35,7 +36,7 @@ export default async function SystemLayout({ children, params }: { children: Rea
           style={{ background: "var(--glass-2)" }}
           aria-hidden="true"
         >
-          {system.icon ?? "📦"}
+          <SystemIcon name={system.icon} />
         </div>
         <div className="min-w-0">
           <h1 className="h1 !m-0 !text-[clamp(28px,5vw,40px)]">

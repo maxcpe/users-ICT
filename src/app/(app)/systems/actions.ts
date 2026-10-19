@@ -10,6 +10,7 @@ import { prisma } from "@/lib/db";
 import { levelCounts } from "@/lib/registry";
 import { getSystem } from "@/lib/system-repo";
 import { checkLevelChange, isValidSystemKey, levelChangeMessage, levelSchema, USERS_SYSTEM_KEY, type Level } from "@/lib/systems";
+import { SYSTEM_ICON_KEYS } from "@/lib/system-icons";
 
 export type FormState = { ok?: boolean; error?: string; fields?: Record<string, string> } | undefined;
 
@@ -22,7 +23,8 @@ const optionalText = (max: number) =>
 
 const infoSchema = z.object({
   name: z.string().trim().min(1, "กรอกชื่อที่แสดง").max(100),
-  icon: optionalText(16),
+  // ไอคอนต้องเป็นชื่อในรายการ (design.md 5.18) ไม่รับอีโมจิหรือข้อความอื่น
+  icon: z.preprocess((v) => (v === "" || v == null ? null : v), z.enum(SYSTEM_ICON_KEYS).nullable()),
   url: optionalText(255).refine((v) => v === null || /^https:\/\//.test(v), "ลิงก์ต้องขึ้นต้นด้วย https://"),
   note: optionalText(255),
 });

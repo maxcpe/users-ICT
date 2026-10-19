@@ -27,31 +27,31 @@ const NEXT_LOGIN = "มีผลเมื่อเข้าสู่ระบบ
 const OPEN_TO_ALL = "ฝั่งผู้ใช้เปิดให้ทุกคนที่มีบัญชี 365";
 
 const SYSTEMS: Seed[] = [
-  { key: "evaluation", storage: "column", columnName: "U_evaluation", name: "ระบบประเมิน", icon: "📝", note: "มีผลทันที", sortOrder: 10,
+  { key: "evaluation", storage: "column", columnName: "U_evaluation", name: "ระบบประเมิน", icon: "clipboard-check", note: "มีผลทันที", sortOrder: 10,
     levels: [{ value: 1, label: "ผู้ใช้งาน" }, { value: 50, label: "เจ้าหน้าที่สร้างการประเมิน" }, { value: 80, label: "เจ้าหน้าที่ฝ่ายบุคคล" }, { value: 99, label: "ผู้ดูแล" }] },
-  { key: "checkin", storage: "column", columnName: "U_checkin", name: "ระบบลงเวลา", icon: "⏰", note: NEXT_LOGIN, sortOrder: 20,
+  { key: "checkin", storage: "column", columnName: "U_checkin", name: "ระบบลงเวลา", icon: "clock", note: NEXT_LOGIN, sortOrder: 20,
     levels: [{ value: 1, label: "ผู้ใช้งาน" }, { value: 90, label: "ผู้ใช้งานและผู้ดูแล" }, { value: 99, label: "ผู้ดูแล" }] },
-  { key: "van", storage: "column", columnName: "U_van", name: "ระบบรถตู้", icon: "🚐", note: `${OPEN_TO_ALL} ระดับ "ผู้ใช้งาน" ไม่ได้ให้สิทธิ์เพิ่ม · ${NEXT_LOGIN}`, sortOrder: 30,
+  { key: "van", storage: "column", columnName: "U_van", name: "ระบบรถตู้", icon: "bus", note: `${OPEN_TO_ALL} ระดับ "ผู้ใช้งาน" ไม่ได้ให้สิทธิ์เพิ่ม · ${NEXT_LOGIN}`, sortOrder: 30,
     levels: [{ value: 1, label: "ผู้ใช้งาน" }, { value: 99, label: "ผู้ดูแล" }] },
-  { key: "meetingroom", storage: "column", columnName: "U_meetingroom", name: "จองห้องประชุม", icon: "🏢", note: `${OPEN_TO_ALL} ระดับ "ผู้ใช้งาน" ไม่ได้ให้สิทธิ์เพิ่ม · ${NEXT_LOGIN}`, sortOrder: 40,
+  { key: "meetingroom", storage: "column", columnName: "U_meetingroom", name: "จองห้องประชุม", icon: "presentation", note: `${OPEN_TO_ALL} ระดับ "ผู้ใช้งาน" ไม่ได้ให้สิทธิ์เพิ่ม · ${NEXT_LOGIN}`, sortOrder: 40,
     levels: [{ value: 1, label: "ผู้ใช้งาน" }, { value: 99, label: "ผู้ดูแล" }] },
-  { key: "studyroom", storage: "column", columnName: "U_studyroom", name: "ห้องศึกษา", icon: "📚", note: `${OPEN_TO_ALL} · ${NEXT_LOGIN}`, sortOrder: 50,
+  { key: "studyroom", storage: "column", columnName: "U_studyroom", name: "ห้องศึกษา", icon: "book-open", note: `${OPEN_TO_ALL} · ${NEXT_LOGIN}`, sortOrder: 50,
     levels: [{ value: 99, label: "ผู้ดูแล" }] },
-  { key: "register", storage: "column", columnName: "U_register", name: "ระบบลงทะเบียน", icon: "🎟️", unconfirmed: true, sortOrder: 60,
+  { key: "register", storage: "column", columnName: "U_register", name: "ระบบลงทะเบียน", icon: "ticket", unconfirmed: true, sortOrder: 60,
     levels: [{ value: 1, label: "ผู้ใช้งาน" }, { value: 90, label: "ระดับ 90" }] },
-  { key: "projectday", storage: "column", columnName: "U_projectday", name: "Project Day", icon: "🏆", unconfirmed: true, sortOrder: 70,
+  { key: "projectday", storage: "column", columnName: "U_projectday", name: "Project Day", icon: "trophy", unconfirmed: true, sortOrder: 70,
     levels: [{ value: 1, label: "ผู้ใช้งาน" }, { value: 99, label: "ผู้ดูแล" }] },
-  { key: "cultureexercise", storage: "column", columnName: "U_cultureexercise", name: "Culture Exercise", icon: "🎭", unconfirmed: true, sortOrder: 80,
+  { key: "cultureexercise", storage: "column", columnName: "U_cultureexercise", name: "Culture Exercise", icon: "notebook-pen", unconfirmed: true, sortOrder: 80,
     levels: [{ value: 1, label: "ผู้ใช้งาน" }, { value: 99, label: "ผู้ดูแล" }] },
-  { key: "edpex", storage: "column", columnName: "U_edpex", name: "EdPEx", icon: "📊", unconfirmed: true, sortOrder: 90,
+  { key: "edpex", storage: "column", columnName: "U_edpex", name: "EdPEx", icon: "chart-column", unconfirmed: true, sortOrder: 90,
     levels: [{ value: 99, label: "ผู้ดูแล" }] },
-  { key: "users", storage: "table", name: "ระบบจัดการผู้ใช้", icon: "🛡️", note: "มีผลทันที", sortOrder: 1000,
+  { key: "users", storage: "table", name: "ระบบจัดการผู้ใช้", icon: "shield-check", note: "มีผลทันที", sortOrder: 1000,
     levels: [{ value: 50, label: "ผู้ดูแลระบบ" }, { value: 99, label: "ผู้ดูแลกลาง" }] },
 ];
 
 // ระบบสมมติสำหรับเครื่องพัฒนาเท่านั้น (ตรงกับแถว library ใน sql/dev-seed.sql)
 const DEV_ONLY: Seed[] = [
-  { key: "library", storage: "table", name: "ห้องสมุด", icon: "📖", url: "https://service.ict.up.ac.th/library", sortOrder: 100,
+  { key: "library", storage: "table", name: "ห้องสมุด", icon: "library", url: "https://service.ict.up.ac.th/library", sortOrder: 100,
     levels: [{ value: 1, label: "ผู้ใช้งาน" }, { value: 99, label: "ผู้ดูแล" }] },
 ];
 

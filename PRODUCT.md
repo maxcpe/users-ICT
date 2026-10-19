@@ -48,7 +48,7 @@ web
 
 ## Evidence on Hand
 
-- ตัวอย่างหน้าจอที่ตกลงแล้ว: [docs/design-c-all-pages.html](docs/design-c-all-pages.html) (ข้อมูลสมมติ)
+- ภาพตัวอย่างตอนเลือกดีไซน์ (ข้อมูลสมมติ) อยู่ที่ [docs/archive/](docs/archive/) เป็นแบบก่อนปรับ 19 ต.ค. 2569 ใช้อ้างอิงเท่านั้น
 - ห้ามใช้ข้อมูลบุคลากรจริงในตัวอย่าง ภาพหน้าจอ test หรือ seed
 
 ## Product Principles

@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { FieldError } from "./form-bits";
+import { DEFAULT_SYSTEM_ICON, isSystemIconKey, SYSTEM_ICONS } from "@/lib/system-icons";
+import { SystemIcon } from "./system-icon";
 
-const ICONS = ["📝", "⏰", "🚐", "🏢", "📚", "📖", "🎟️", "🏆", "🎭", "📊", "🗂️", "📦", "💻", "🔬", "🧾", "📅"];
 
 /** ช่องข้อมูลระบบที่ใช้ทั้งหน้าลงทะเบียนและหน้าตั้งค่า */
 export function SystemInfoFields({
@@ -13,7 +14,7 @@ export function SystemInfoFields({
   defaults: { name: string; icon: string | null; url: string | null; note: string | null };
   fields?: Record<string, string>;
 }) {
-  const [icon, setIcon] = useState(defaults.icon ?? "📦");
+  const [icon, setIcon] = useState<string>(isSystemIconKey(defaults.icon) ? defaults.icon : DEFAULT_SYSTEM_ICON);
   const err = (k: string) => fields?.[k];
   return (
     <>
@@ -35,9 +36,17 @@ export function SystemInfoFields({
         <legend className="label mb-1.5">ไอคอน</legend>
         <input type="hidden" name="icon" value={icon} />
         <div className="chips">
-          {ICONS.map((i) => (
-            <button key={i} type="button" className="pill !text-xl" aria-pressed={icon === i} aria-label={`ไอคอน ${i}`} onClick={() => setIcon(i)}>
-              {i}
+          {SYSTEM_ICONS.map((i) => (
+            <button
+              key={i.key}
+              type="button"
+              className="pill !min-w-11 justify-center !px-0 text-lg"
+              aria-pressed={icon === i.key}
+              aria-label={`ไอคอน ${i.label}`}
+              title={i.label}
+              onClick={() => setIcon(i.key)}
+            >
+              <SystemIcon name={i.key} />
             </button>
           ))}
         </div>

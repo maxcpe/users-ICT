@@ -8,6 +8,7 @@ import { ConfirmDialog, type Impact } from "./confirm-dialog";
 import { LevelChip } from "./level-chip";
 import { LevelSelect } from "./level-select";
 import { IconAlert } from "@/components/icons";
+import { SystemIcon } from "./system-icon";
 
 export type PersonSystemRow = {
   key: string;
@@ -80,7 +81,7 @@ export function PersonRoleEditor({ userId, personName, systems }: { userId: numb
               style={pending.has(s.key) ? { background: "color-mix(in srgb, var(--warn) 6%, transparent)" } : undefined}
             >
               <span className="grid h-10 w-10 flex-none place-items-center rounded-xl text-xl" style={{ background: "var(--glass-2)" }} aria-hidden="true">
-                {s.icon ?? "📦"}
+                <SystemIcon name={s.icon} />
               </span>
               <div className="min-w-[180px] flex-1">
                 <b>{s.name}</b>

@@ -7,6 +7,7 @@ import { listSystemAdmins, listSystems } from "@/lib/system-repo";
 import { USERS_SYSTEM_KEY } from "@/lib/systems";
 import { initials } from "@/lib/text";
 import { IconAlert, IconGrid, IconList, IconMoon, IconPlus } from "@/components/icons";
+import { SystemIcon } from "@/components/system-icon";
 
 export const metadata: Metadata = { title: "ระบบและผู้ดูแล" };
 
@@ -129,7 +130,7 @@ export default async function SystemsPage({ searchParams }: { searchParams: Prom
                 <tr key={s.key} style={s.active ? undefined : { opacity: 0.6 }}>
                   <td>
                     <Link href={`/systems/${s.key}`} className="flex min-h-11 items-center gap-2.5 text-inherit no-underline">
-                      <span aria-hidden="true" className="text-xl">{s.icon ?? "📦"}</span>
+                      <span className="text-xl text-muted"><SystemIcon name={s.icon} /></span>
                       <span className="min-w-0">
                         <span className="name block">{s.name}</span>
                         <span className="sub block">{s.levels.map((l) => l.label).join(" · ")}</span>
@@ -165,7 +166,7 @@ export default async function SystemsPage({ searchParams }: { searchParams: Prom
                 >
                   <div className="flex items-center gap-3">
                     <span className="grid h-11 w-11 flex-none place-items-center rounded-xl text-[22px]" style={{ background: "var(--glass-2)" }} aria-hidden="true">
-                      {s.icon ?? "📦"}
+                      <SystemIcon name={s.icon} />
                     </span>
                     <div className="min-w-0 flex-1">
                       <h2 className="m-0 text-[17px] font-semibold leading-snug">{s.name}</h2>

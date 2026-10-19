@@ -87,3 +87,14 @@ describe("แก้ระดับที่มีคนใช้อยู่ (sp
     expect(checkLevelChange([], new Map())).toEqual([{ code: "empty" }]);
   });
 });
+
+describe("ไอคอนของระบบ (design.md 5.18)", () => {
+  it("รับเฉพาะชื่อในรายการ ไม่รับอีโมจิ", async () => {
+    const { isSystemIconKey, EMOJI_TO_ICON, SYSTEM_ICON_KEYS } = await import("./system-icons");
+    expect(isSystemIconKey("clock")).toBe(true);
+    expect(isSystemIconKey("⏰")).toBe(false);
+    expect(isSystemIconKey(null)).toBe(false);
+    // อีโมจิเก่าทุกตัวแปลงเป็นไอคอนที่อยู่ในรายการ
+    for (const k of Object.values(EMOJI_TO_ICON)) expect(SYSTEM_ICON_KEYS).toContain(k);
+  });
+});
