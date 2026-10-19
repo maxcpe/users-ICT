@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { addAdmin, removeAdmin, searchStaffAction, type StaffHit } from "@/app/(app)/role-actions";
 import { ConfirmDialog } from "./confirm-dialog";
+import { IconPlus } from "@/components/icons";
 
 type Person = { id: number; name: string; email: string | null };
 
@@ -50,7 +51,7 @@ export function AdminManager({
     <>
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
         <h2 id="admins" className="h2 !m-0">ผู้ดูแลที่ตั้งสิทธิ์ได้</h2>
-        <button type="button" className="btn btn-sm" aria-expanded={picking} onClick={() => setPicking((v) => !v)}>＋ แต่งตั้ง</button>
+        <button type="button" className="btn btn-sm" aria-expanded={picking} onClick={() => setPicking((v) => !v)}><IconPlus />แต่งตั้ง</button>
       </div>
       <p className="small mb-2 mt-0">ตั้งสิทธิ์ของ{systemName}ให้คนอื่นได้ในระบบจัดการผู้ใช้</p>
       <p aria-live="polite" className="small m-0">{message}</p>

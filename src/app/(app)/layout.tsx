@@ -3,6 +3,7 @@ import { requireActor } from "@/lib/access";
 import { dbNames } from "@/lib/env";
 import { applyDueDeactivations } from "@/lib/lifecycle-service";
 import { listSystems } from "@/lib/system-repo";
+import { IconLock } from "@/components/icons";
 
 // ทุกหน้าในกลุ่มนี้ต้องล็อกอินและมีบทบาท อ่านจากฐานทุก request (spec 3.2)
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main id="main" className="above mx-auto max-w-[1120px] px-4 pb-16 pt-3">
         {dbNames().userDbReadOnly && (
           <div className="callout callout-warn mb-4" role="status">
-            <span aria-hidden="true">🔒</span>
+            <IconLock />
             <span>
               โหมดอ่านข้อมูลจริง (เครื่องพัฒนา): เห็นรายชื่อและสิทธิ์จริง แต่แก้สิทธิ์ของระบบเดิม (คอลัมน์ U_…) ไม่ได้ ·
               ระบบใหม่ ผู้ดูแล และบันทึกการใช้งานบันทึกลงฐาน {dbNames().appDb}

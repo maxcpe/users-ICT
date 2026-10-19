@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import type { StaffFormState } from "@/app/(app)/u/staff-actions";
 import { FieldError, FormMessage, SubmitButton } from "./form-bits";
+import { IconAlert } from "@/components/icons";
 
 type Values = { name: string; email: string; position: string; branch: string; job: string };
 
@@ -79,7 +80,7 @@ export function StaffForm({
 
       {state?.confirmEmail && (
         <div className="callout callout-warn mb-4" role="alert">
-          <span aria-hidden="true">⚠</span>
+          <IconAlert />
           <div className="grid gap-2">
             <span>
               เปลี่ยนอีเมลจาก <b>{state.confirmEmail.from ?? "ไม่มี"}</b> เป็น <b>{state.confirmEmail.to}</b>

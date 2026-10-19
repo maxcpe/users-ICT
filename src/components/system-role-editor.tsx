@@ -7,6 +7,7 @@ import { describeLevel, type Level } from "@/lib/systems";
 import { ConfirmDialog, type Impact } from "./confirm-dialog";
 import { LevelChip } from "./level-chip";
 import { LevelSelect } from "./level-select";
+import { IconAlert, IconCheck, IconInfo, IconUndo } from "@/components/icons";
 
 export type EditableRow = {
   id: number;
@@ -120,7 +121,7 @@ export function SystemRoleEditor({
     ? "ไม่พบคนที่ตรงกับตัวกรอง"
     : mode === "none"
       ? `บุคลากรทุกคนมีสิทธิ์ใน${system.name}แล้ว`
-      : `ยังไม่มีใครมีสิทธิ์ใน${system.name} — กด "＋ เพิ่มคน" เพื่อเริ่มตั้งสิทธิ์`;
+      : `ยังไม่มีใครมีสิทธิ์ใน${system.name} — กด "เพิ่มคน" เพื่อเริ่มตั้งสิทธิ์`;
 
   const withSelection = canEdit;
 
@@ -128,7 +129,7 @@ export function SystemRoleEditor({
     <>
       {notice && (
         <div className={`callout ${notice.tone === "ok" ? "callout-info" : "callout-bad"} mb-3 items-center`} role="status">
-          <span aria-hidden="true">{notice.tone === "ok" ? "✓" : "⚠"}</span>
+          {notice.tone === "ok" ? <IconCheck /> : <IconAlert />}
           <span className="flex-1">{notice.text}</span>
           {undo && (
             <button
@@ -144,7 +145,7 @@ export function SystemRoleEditor({
                 })
               }
             >
-              ↶ เลิกทำ
+              <IconUndo /> เลิกทำ
             </button>
           )}
         </div>
@@ -152,11 +153,11 @@ export function SystemRoleEditor({
 
       {mode === "none" && canEdit && (
         <div className="callout callout-info mb-3 flex-wrap items-center">
-          <span aria-hidden="true">ℹ️</span>
+          <IconInfo />
           <span className="min-w-[220px] flex-1">
             ยังไม่มีสิทธิ์ใน{system.name} {n(matched)} คน{filtered ? "ที่ตรงกับตัวกรอง" : ""} — เลือกระดับในแถว
             หรือติ๊กหลายคนแล้วตั้งพร้อมกัน
-            {addAllBlocked && matched > 0 && <span className="mt-1 block text-warn-ink">⚠ &quot;ตั้งทั้งหมด&quot; ใช้ไม่ได้: {addAllBlocked}</span>}
+            {addAllBlocked && matched > 0 && <span className="mt-1 block text-warn-ink"><IconAlert /> &quot;ตั้งทั้งหมด&quot; ใช้ไม่ได้: {addAllBlocked}</span>}
           </span>
           <button
             type="button"

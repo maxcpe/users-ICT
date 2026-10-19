@@ -11,6 +11,7 @@ import { isCentral } from "@/lib/roles";
 import { listSystems } from "@/lib/system-repo";
 import { describeLevel, USERS_SYSTEM_KEY } from "@/lib/systems";
 import { blankToNull } from "@/lib/text";
+import { IconHourglass, IconMoon } from "@/components/icons";
 
 export default async function PersonLayout({ children, params }: { children: React.ReactNode; params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -55,11 +56,11 @@ export default async function PersonLayout({ children, params }: { children: Rea
         <div className="min-w-0">
           <h1 className="h1 !text-[clamp(26px,5vw,38px)]">{person.name ?? "—"}</h1>
           <div className="chips mb-1">
-            {state === "inactive" && <span className="chip chip-off">💤 ปิดใช้งาน · {status?.reason}</span>}
+            {state === "inactive" && <span className="chip chip-off"><IconMoon /> ปิดใช้งาน · {status?.reason}</span>}
             {state === "scheduled" && (
-              <span className="chip chip-warn">⏳ จะปิดใช้งาน {status?.effectiveDate.toISOString().slice(0, 10)} · {status?.reason}</span>
+              <span className="chip chip-warn"><IconHourglass /> จะปิดใช้งาน {status?.effectiveDate.toISOString().slice(0, 10)} · {status?.reason}</span>
             )}
-            {state === "active" && <span className="chip chip-ok">● ใช้งาน</span>}
+            {state === "active" && <span className="chip chip-ok"><span className="dot" aria-hidden="true" />ใช้งาน</span>}
             <span className="chip chip-cyan">{academic ? "สายวิชาการ" : "สายสนับสนุน"}</span>
             <span className="small">
               {blankToNull(person.position) ?? "ไม่มีตำแหน่ง"} · {blankToNull(person.email) ?? "ไม่มีอีเมล"} · รหัส {person.id}
@@ -73,7 +74,7 @@ export default async function PersonLayout({ children, params }: { children: Rea
         tabs={[
           { href: base, label: "สิทธิ์" },
           { href: `${base}/info`, label: "ข้อมูลทั่วไป" },
-          ...(central ? [{ href: `${base}/sensitive`, label: "ข้อมูลอ่อนไหว 🔒" }] : []),
+          ...(central ? [{ href: `${base}/sensitive`, label: "ข้อมูลอ่อนไหว" }] : []),
           { href: `${base}/history`, label: "ประวัติ" },
         ]}
       />

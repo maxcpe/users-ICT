@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import type { Level } from "@/lib/systems";
+import { IconPlus, IconX } from "@/components/icons";
 
 type Row = { id: number; value: string; label: string; description: string };
 
@@ -62,7 +63,7 @@ export function LevelEditor({ initial, inUse = {} }: { initial: Level[]; inUse?:
                 disabled={locked}
                 onClick={() => setRows((rs) => rs.filter((x) => x.id !== r.id))}
               >
-                ✕
+                <IconX />
               </button>
               {locked && (
                 <span id={`${base}-locked-${r.id}`} className="small" style={{ gridColumn: "1 / -1" }}>
@@ -86,7 +87,7 @@ export function LevelEditor({ initial, inUse = {} }: { initial: Level[]; inUse?:
           setNextId((n) => n + 1);
         }}
       >
-        ＋ เพิ่มระดับ
+        <IconPlus />เพิ่มระดับ
       </button>
     </div>
   );

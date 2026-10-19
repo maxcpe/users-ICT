@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { addCentralAdmin, removeCentralAdmin, searchStaffAction, type StaffHit } from "@/app/(app)/role-actions";
 import { ConfirmDialog } from "./confirm-dialog";
+import { IconMoon, IconPlus } from "@/components/icons";
 
 type Person = { id: number; name: string; email: string | null };
 
@@ -46,7 +47,7 @@ export function CentralAdminManager({ selfId, centrals }: { selfId: number; cent
     <>
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
         <h2 id="admins" className="h2 !m-0">ผู้ดูแลกลาง</h2>
-        <button type="button" className="btn btn-sm" aria-expanded={picking} onClick={() => setPicking((v) => !v)}>＋ แต่งตั้ง</button>
+        <button type="button" className="btn btn-sm" aria-expanded={picking} onClick={() => setPicking((v) => !v)}><IconPlus />แต่งตั้ง</button>
       </div>
       <p className="small mb-2 mt-0">
         จัดการได้ทุกอย่าง รวมถึงข้อมูลอ่อนไหวและผู้ดูแลกลางคนอื่น ควรมีอย่างน้อย 2 คน เผื่อคนหนึ่งเข้าระบบไม่ได้
@@ -80,7 +81,7 @@ export function CentralAdminManager({ selfId, centrals }: { selfId: number; cent
             <div className="min-w-0 flex-1">
               <div className="name" style={a.inactive ? { color: "var(--faint)" } : undefined}>
                 {a.name} {a.id === selfId && <span className="chip chip-cyan">ท่าน</span>}
-                {a.inactive && <span className="chip chip-off">💤 ปิดใช้งาน</span>}
+                {a.inactive && <span className="chip chip-off"><IconMoon /> ปิดใช้งาน</span>}
               </div>
               <div className="sub">{a.email ?? "ไม่มีอีเมล"}</div>
             </div>

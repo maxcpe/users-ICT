@@ -11,6 +11,7 @@ import { canViewSystem, isCentral } from "@/lib/roles";
 import { listSystems } from "@/lib/system-repo";
 import { USERS_SYSTEM_KEY } from "@/lib/systems";
 import { blankToNull } from "@/lib/text";
+import { IconCheck, IconInfo, IconPlus } from "@/components/icons";
 
 export const metadata: Metadata = { title: "บุคลากร" };
 
@@ -43,9 +44,9 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
   if (!central && visible.length === 0) {
     return (
       <>
-        <h1 className="h1"><span className="text-gradient">บุคลากร</span></h1>
+        <h1 className="h1">บุคลากร</h1>
         <div className="callout callout-info mt-4">
-          <span aria-hidden="true">ℹ️</span>
+          <IconInfo />
           <span>ท่านยังไม่ได้รับมอบหมายให้ดูแลระบบใด ติดต่อผู้ดูแลกลางเพื่อขอสิทธิ์</span>
         </div>
       </>
@@ -89,16 +90,16 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
     <>
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2.5">
         <h1 className="h1">
-          <span className="text-gradient">บุคลากร</span>
+          บุคลากร
           {central ? " ทั้งหมด" : ""}
         </h1>
         {central && !dbNames().userDbReadOnly && (
-          <Link href="/u/new" className="btn btn-primary max-[820px]:w-full">＋ เพิ่มบุคลากร</Link>
+          <Link href="/u/new" className="btn btn-primary max-[820px]:w-full"><IconPlus />เพิ่มบุคลากร</Link>
         )}
       </div>
       {deleted && (
         <div className="callout callout-info mb-3.5" role="status">
-          <span aria-hidden="true">✓</span>
+          <IconCheck />
           <span>ลบแถวแล้ว ข้อมูลเดิมเก็บไว้ในบันทึกการใช้งาน</span>
         </div>
       )}
@@ -120,9 +121,9 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
 
       {central && (
         <div className="mb-[18px] grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3.5">
-          <Link href="/?status=active" className="glass stat"><b className="glow-p">{staffTotal - inactive.size}</b>ใช้งาน</Link>
+          <Link href="/?status=active" className="glass stat"><b>{staffTotal - inactive.size}</b>ใช้งาน</Link>
           <Link href={usersSystem ? `/systems/${USERS_SYSTEM_KEY}/people` : "/"} className="glass stat"><b>{adminCount}</b>ผู้ดูแลระบบ</Link>
-          <Link href="/?status=inactive" className="glass stat"><b className="glow-c">{inactive.size}</b>ปิดใช้งาน</Link>
+          <Link href="/?status=inactive" className="glass stat"><b>{inactive.size}</b>ปิดใช้งาน</Link>
           <Link href="/?incomplete=1" className="glass stat"><b className="!text-warn-ink">{incomplete + dupes.size}</b>ข้อมูลไม่ครบหรือซ้ำ</Link>
         </div>
       )}

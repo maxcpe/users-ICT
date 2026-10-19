@@ -13,7 +13,7 @@ export default async function NewStaffPage() {
   return (
     <div className="mx-auto max-w-[760px]">
       <Link href="/" className="mb-1 inline-flex min-h-11 items-center gap-1.5 text-sm text-muted no-underline">← กลับไปรายชื่อ</Link>
-      <h1 className="h1"><span className="text-gradient">เพิ่ม</span>บุคลากร</h1>
+      <h1 className="h1">เพิ่มบุคลากร</h1>
       <p className="lead">เฉพาะบุคลากร ไม่รวมนักศึกษา · บันทึกแล้วไปตั้งสิทธิ์ต่อได้เลย</p>
       <StaffForm
         action={createStaffAction}

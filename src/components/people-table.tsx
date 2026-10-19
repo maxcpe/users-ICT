@@ -7,6 +7,7 @@ import { bulkSetRole } from "@/app/(app)/role-actions";
 import type { Level } from "@/lib/systems";
 import { ConfirmDialog } from "./confirm-dialog";
 import { LevelChip } from "./level-chip";
+import { IconAlert, IconMoon, IconShield, IconWrench } from "@/components/icons";
 
 export type PeopleRow = {
   id: number;
@@ -123,10 +124,10 @@ export function PeopleTable({
                 </td>
                 <td role="cell" className="cell-role">
                   <div className="chips">
-                    {p.centralLevel === 99 && <span className="chip chip-violet">🛡️ ผู้ดูแลกลาง</span>}
-                    {p.centralLevel === 50 && <span className="chip chip-violet">🔧 ผู้ดูแลระบบ</span>}
+                    {p.centralLevel === 99 && <span className="chip chip-violet"><IconShield /> ผู้ดูแลกลาง</span>}
+                    {p.centralLevel === 50 && <span className="chip chip-violet"><IconWrench /> ผู้ดูแลระบบ</span>}
                     {p.inactiveReason ? (
-                      <span className="chip chip-off">💤 ปิดใช้งาน · {p.inactiveReason}</span>
+                      <span className="chip chip-off"><IconMoon /> ปิดใช้งาน · {p.inactiveReason}</span>
                     ) : (
                       (() => {
                         const held = systems.map((s, i) => ({ s, i })).filter(({ s }) => p.roles[s.key] != null);
@@ -149,7 +150,7 @@ export function PeopleTable({
                       })()
                     )}
                     {!p.inactiveReason && systems.every((s) => p.roles[s.key] == null) && <span className="chip chip-off">ยังไม่มีสิทธิ์</span>}
-                    {p.flags.map((f) => <span key={f} className="chip chip-warn">⚠ {f}</span>)}
+                    {p.flags.map((f) => <span key={f} className="chip chip-warn"><IconAlert /> {f}</span>)}
                   </div>
                 </td>
                 <td role="cell" className="cell-action">

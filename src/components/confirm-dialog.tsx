@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { IconAlert } from "@/components/icons";
 
 export type Impact = { label: string; value: string; tone?: "now" | "later" | "count" | "muted" };
 
@@ -58,7 +59,7 @@ export function ConfirmDialog({
   }, [open]);
 
   const border = tone === "cyan" ? "#00e1ff55" : tone === "danger" ? "#ff4d6d66" : "#ff2bd655";
-  const glow = tone === "cyan" ? "0 0 60px #00e1ff33" : tone === "danger" ? "0 0 60px #ff4d6d33" : "var(--glow-dialog)";
+  const glow = "var(--shadow-float)";
   const btn = tone === "cyan" ? "btn btn-cyan" : tone === "danger" ? "btn text-white" : "btn btn-primary";
 
   return (
@@ -87,7 +88,7 @@ export function ConfirmDialog({
       {children}
       {error && (
         <div className="callout callout-bad mt-3" role="alert">
-          <span aria-hidden="true">⚠</span>
+          <IconAlert />
           <span>{error}</span>
         </div>
       )}
@@ -96,7 +97,7 @@ export function ConfirmDialog({
         <button
           type="button"
           className={btn}
-          style={tone === "danger" ? { background: "linear-gradient(135deg,#ff4d6d,#c026d3)", border: 0 } : undefined}
+          style={tone === "danger" ? { background: "var(--bad-strong)", border: 0 } : undefined}
           onClick={onConfirm}
           disabled={busy || confirmDisabled}
           aria-disabled={busy || confirmDisabled}

@@ -1,6 +1,7 @@
 import type { AuditLog } from "@/generated/prisma/client";
 import type { SystemDef } from "@/lib/registry";
 import { describeLevel } from "@/lib/systems";
+import { IconLock } from "@/components/icons";
 
 const ACTION_TEXT: Record<string, { label: string; chip: string }> = {
   "user.create": { label: "เพิ่มบุคลากร", chip: "chip-ok" },
@@ -8,9 +9,9 @@ const ACTION_TEXT: Record<string, { label: string; chip: string }> = {
   "user.deactivate": { label: "ปิดใช้งาน", chip: "chip-pink" },
   "user.reactivate": { label: "เปิดใช้งานอีกครั้ง", chip: "chip-ok" },
   "user.delete": { label: "ลบแถว", chip: "chip-pink" },
-  "sensitive.view": { label: "🔒 แสดงข้อมูล", chip: "chip-warn" },
-  "sensitive.update": { label: "🔒 แก้ข้อมูลอ่อนไหว", chip: "chip-warn" },
-  "sensitive.check": { label: "🔒 ตรวจคีย์เลขบัตร", chip: "chip-warn" },
+  "sensitive.view": { label: "แสดงข้อมูลอ่อนไหว", chip: "chip-warn" },
+  "sensitive.update": { label: "แก้ข้อมูลอ่อนไหว", chip: "chip-warn" },
+  "sensitive.check": { label: "ตรวจคีย์เลขบัตร", chip: "chip-warn" },
   "role.set": { label: "ตั้งสิทธิ์", chip: "chip-violet" },
   "admin.assign": { label: "แต่งตั้งผู้ดูแล", chip: "chip-cyan" },
   "admin.revoke": { label: "ถอนผู้ดูแล", chip: "chip-pink" },
@@ -129,7 +130,7 @@ export function AuditList({
               <br className="max-[820px]:hidden" /> {timeFmt.format(e.at)}
             </time>
             <div>
-              <span className={`chip ${a.chip}`}>{a.label}</span>{" "}
+              <span className={`chip ${a.chip}`}>{e.action.startsWith("sensitive.") && <IconLock />}{a.label}</span>{" "}
               {!hideTarget && e.targetId !== null && <b>{who(e.targetId)}</b>}
               {system && <> · {system.name}</>}
               {!system && e.systemKey && <> · {e.systemKey}</>} <span className="small">โดย {who(e.actorId)}</span>

@@ -3,6 +3,7 @@ import { signOut } from "@/auth";
 import { withBasePath } from "@/lib/base-path";
 import type { Actor } from "@/lib/roles";
 import { MobileMenu, NavLinks, type NavItem } from "./mobile-menu";
+import { IconShield, IconWrench } from "@/components/icons";
 
 export function Header({ actor, systems }: { actor: Actor; systems: { key: string; name: string }[] }) {
   const central = actor.role === "central";
@@ -24,7 +25,8 @@ export function Header({ actor, systems }: { actor: Actor; systems: { key: strin
         ...systemLinks,
         { href: "/audit", label: "บันทึกการใช้งาน" },
       ];
-  const badge = central ? "🛡️ ผู้ดูแลกลาง" : `🔧 ผู้ดูแล${systemNames.length === 0 ? "ระบบ" : systemNames.length <= 2 ? systemNames.join(", ") : ` ${systemNames.length} ระบบ`}`;
+  const badgeIcon = central ? <IconShield /> : <IconWrench />;
+  const badge = central ? "ผู้ดูแลกลาง" : `ผู้ดูแล${systemNames.length === 0 ? "ระบบ" : systemNames.length <= 2 ? systemNames.join(", ") : ` ${systemNames.length} ระบบ`}`;
 
   return (
     <header className="above mx-auto flex max-w-[1120px] items-center gap-3 p-4">
@@ -35,8 +37,8 @@ export function Header({ actor, systems }: { actor: Actor; systems: { key: strin
         <NavLinks items={items} />
       </nav>
       <div className="ml-auto flex items-center gap-2.5 text-sm text-muted">
-        <span className="hidden rounded-xl border border-line px-3 py-2 sm:inline-block" style={{ background: "var(--glass)" }}>
-          {badge} · {actor.name}
+        <span className="hidden items-center gap-1.5 rounded-xl border border-line px-3 py-2 sm:inline-flex" style={{ background: "var(--glass)" }}>
+          {badgeIcon} {badge} · {actor.name}
         </span>
         <form
           action={async () => {

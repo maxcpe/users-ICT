@@ -5,6 +5,7 @@ import { requireActor } from "@/lib/access";
 import { countHolders } from "@/lib/registry";
 import { canViewSystem, isCentral } from "@/lib/roles";
 import { getSystem } from "@/lib/system-repo";
+import { IconAlert, IconMoon } from "@/components/icons";
 
 export default async function SystemLayout({ children, params }: { children: React.ReactNode; params: Promise<{ key: string }> }) {
   const { key } = await params;
@@ -23,9 +24,6 @@ export default async function SystemLayout({ children, params }: { children: Rea
     ...(central ? [{ href: `${base}/settings`, label: "ตั้งค่า" }] : []),
   ];
 
-  // คำแรกปกติ คำหลังไล่สี เช่น "ระบบ" + "ลงเวลา" (design.md 3)
-  const [first, ...rest] = system.name.startsWith("ระบบ") ? ["ระบบ", system.name.slice(4)] : ["", system.name];
-
   return (
     <>
       <Link href="/systems" className="mb-1 inline-flex min-h-11 items-center gap-1.5 text-sm text-muted no-underline">
@@ -34,19 +32,18 @@ export default async function SystemLayout({ children, params }: { children: Rea
       <div className="flex flex-wrap items-center gap-4">
         <div
           className="grid h-16 w-16 flex-none place-items-center rounded-[20px] border border-[var(--field-line)] text-[32px]"
-          style={{ background: "linear-gradient(135deg,#00e1ff33,#ff2bd633)" }}
+          style={{ background: "var(--glass-2)" }}
           aria-hidden="true"
         >
           {system.icon ?? "📦"}
         </div>
         <div className="min-w-0">
           <h1 className="h1 !m-0 !text-[clamp(28px,5vw,40px)]">
-            {first}
-            <span className="text-gradient">{rest.join("")}</span>
+            {system.name}
           </h1>
           <div className="chips mt-1.5">
-            {system.active ? <span className="chip chip-ok">● ใช้งาน</span> : <span className="chip chip-off">💤 ซ่อนจากหน้าจอ</span>}
-            {system.unconfirmed && <span className="chip chip-warn">⚠ ระดับยังไม่ยืนยัน</span>}
+            {system.active ? <span className="chip chip-ok"><span className="dot" aria-hidden="true" />ใช้งาน</span> : <span className="chip chip-off"><IconMoon /> ซ่อนจากหน้าจอ</span>}
+            {system.unconfirmed && <span className="chip chip-warn"><IconAlert /> ระดับยังไม่ยืนยัน</span>}
             {system.url && (
               <a href={system.url} target="_blank" rel="noopener noreferrer" className="small !text-cyan-ink">
                 {system.url.replace(/^https:\/\//, "")} ↗

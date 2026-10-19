@@ -45,7 +45,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <h1 className="h1">บันทึก<span className="text-gradient">การใช้งาน</span></h1>
+      <h1 className="h1">บันทึกการใช้งาน</h1>
       <p className="lead">ทุกการเปลี่ยนแปลง แก้หรือลบไม่ได้{actor.role === "system" ? " · ท่านเห็นเฉพาะระบบที่ดูแล" : ""}</p>
 
       <form className="mb-3.5 flex flex-wrap items-end gap-2.5">

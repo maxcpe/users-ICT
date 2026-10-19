@@ -6,6 +6,7 @@ import { distinctValues } from "@/lib/registry";
 import { isCentral } from "@/lib/roles";
 import { blankToNull } from "@/lib/text";
 import { editStaffAction } from "../../staff-actions";
+import { IconInfo } from "@/components/icons";
 
 export const metadata: Metadata = { title: "ข้อมูลทั่วไป" };
 
@@ -52,7 +53,7 @@ export default async function PersonInfo({ params }: { params: Promise<{ id: str
         </dl>
       </section>
       <div className="callout callout-info content-start">
-        <span aria-hidden="true">ℹ️</span>
+        <IconInfo />
         <span>
           {isCentral(actor) ? "โหมดอ่านข้อมูลจริง แก้ข้อมูลไม่ได้" : "ถ้าชื่อ ตำแหน่ง หรืออีเมลผิด แจ้งผู้ดูแลกลาง"}
         </span>

@@ -6,6 +6,7 @@ import { canViewSystem, isCentral } from "@/lib/roles";
 import { listSystemAdmins, listSystems } from "@/lib/system-repo";
 import { USERS_SYSTEM_KEY } from "@/lib/systems";
 import { initials } from "@/lib/text";
+import { IconAlert, IconGrid, IconList, IconMoon, IconPlus } from "@/components/icons";
 
 export const metadata: Metadata = { title: "ระบบและผู้ดูแล" };
 
@@ -64,7 +65,7 @@ export default async function SystemsPage({ searchParams }: { searchParams: Prom
             key={a.userId}
             title={people.get(a.userId) ?? `รหัส ${a.userId}`}
             className="grid h-7 w-7 place-items-center rounded-full text-[11px] font-bold"
-            style={{ background: "linear-gradient(135deg, var(--pink), var(--violet))", border: "2px solid var(--bg)", marginLeft: i ? -7 : 0 }}
+            style={{ background: "var(--glass-2)", border: "2px solid var(--surface)", marginLeft: i ? -7 : 0 }}
           >
             {initials(people.get(a.userId) ?? "?")}
           </span>
@@ -77,9 +78,9 @@ export default async function SystemsPage({ searchParams }: { searchParams: Prom
     <>
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2.5">
         <h1 className="h1">
-          {central ? <>ระบบและ<span className="text-gradient">ผู้ดูแล</span></> : <>ระบบที่<span className="text-gradient">ดูแล</span></>}
+          {central ? <>ระบบและผู้ดูแล</> : <>ระบบที่ดูแล</>}
         </h1>
-        {central && <Link href="/systems/new" className="btn btn-primary">＋ ลงทะเบียนระบบ</Link>}
+        {central && <Link href="/systems/new" className="btn btn-primary"><IconPlus />ลงทะเบียนระบบ</Link>}
       </div>
       <p className="lead">{systems.length.toLocaleString("th-TH")} ระบบ{central ? "ที่ใช้ทะเบียนผู้ใช้ร่วมกัน" : "ที่ท่านตั้งสิทธิ์ได้"}</p>
 
@@ -98,15 +99,15 @@ export default async function SystemsPage({ searchParams }: { searchParams: Prom
         <nav className="flex flex-wrap gap-2.5" aria-label="กรองระบบ">
           <Link href={href({ show: "all" })} className="pill" aria-current={show === "all" ? "page" : undefined}>ทั้งหมด {tally.all}</Link>
           {tally.warn > 0 && (
-            <Link href={href({ show: "warn" })} className="pill" aria-current={show === "warn" ? "page" : undefined}>⚠ มีคำเตือน {tally.warn}</Link>
+            <Link href={href({ show: "warn" })} className="pill" aria-current={show === "warn" ? "page" : undefined}><IconAlert /> มีคำเตือน {tally.warn}</Link>
           )}
           {tally.hidden > 0 && (
-            <Link href={href({ show: "hidden" })} className="pill" aria-current={show === "hidden" ? "page" : undefined}>💤 ซ่อนอยู่ {tally.hidden}</Link>
+            <Link href={href({ show: "hidden" })} className="pill" aria-current={show === "hidden" ? "page" : undefined}><IconMoon /> ซ่อนอยู่ {tally.hidden}</Link>
           )}
         </nav>
         <nav className="ml-auto flex gap-1.5" aria-label="รูปแบบการแสดง">
-          <Link href={href({ view: "card" })} className="pill" aria-current={view === "card" ? "page" : undefined}>▦ การ์ด</Link>
-          <Link href={href({ view: "list" })} className="pill" aria-current={view === "list" ? "page" : undefined}>☰ ตาราง</Link>
+          <Link href={href({ view: "card" })} className="pill" aria-current={view === "card" ? "page" : undefined}><IconGrid />การ์ด</Link>
+          <Link href={href({ view: "list" })} className="pill" aria-current={view === "list" ? "page" : undefined}><IconList />ตาราง</Link>
         </nav>
       </div>
 
@@ -139,9 +140,9 @@ export default async function SystemsPage({ searchParams }: { searchParams: Prom
                   <td className="hide-sm text-right tabular-nums">{mine.length}</td>
                   <td className="hide-sm">
                     <div className="chips">
-                      {!s.active && <span className="chip chip-off">💤 ซ่อน</span>}
-                      {warnings.map((w) => <span key={w} className="chip chip-warn">⚠ {w}</span>)}
-                      {s.active && warnings.length === 0 && <span className="chip chip-ok">● ปกติ</span>}
+                      {!s.active && <span className="chip chip-off"><IconMoon /> ซ่อน</span>}
+                      {warnings.map((w) => <span key={w} className="chip chip-warn"><IconAlert /> {w}</span>)}
+                      {s.active && warnings.length === 0 && <span className="chip chip-ok"><span className="dot" aria-hidden="true" />ปกติ</span>}
                     </div>
                   </td>
                 </tr>
@@ -170,7 +171,7 @@ export default async function SystemsPage({ searchParams }: { searchParams: Prom
                       <h2 className="m-0 text-[17px] font-semibold leading-snug">{s.name}</h2>
                       <div className="chips mt-0.5">
                         {s.storage === "table" && <span className="chip chip-violet">ระบบใหม่</span>}
-                        {!s.active && <span className="chip chip-off">💤 ซ่อนจากหน้าจอ</span>}
+                        {!s.active && <span className="chip chip-off"><IconMoon /> ซ่อนจากหน้าจอ</span>}
                       </div>
                     </div>
                     <span className="text-faint" aria-hidden="true">›</span>
@@ -191,7 +192,7 @@ export default async function SystemsPage({ searchParams }: { searchParams: Prom
                     {s.levels.map((l) => (
                       <span key={l.value} className={`chip ${l.value === top ? "chip-pink" : "chip-off"}`}>{l.label}</span>
                     ))}
-                    {warnings.map((w) => <span key={w} className="chip chip-warn">⚠ {w}</span>)}
+                    {warnings.map((w) => <span key={w} className="chip chip-warn"><IconAlert /> {w}</span>)}
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between gap-2">

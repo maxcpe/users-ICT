@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { IconAlert, IconCheck } from "@/components/icons";
 
 export function SubmitButton({ children, className = "btn btn-primary" }: { children: React.ReactNode; className?: string }) {
   const { pending } = useFormStatus();
@@ -17,13 +18,13 @@ export function FormMessage({ state }: { state: { ok?: boolean; error?: string }
     <div aria-live="polite">
       {state?.error && (
         <div className="callout callout-bad mb-4" role="alert">
-          <span aria-hidden="true">⚠</span>
+          <IconAlert />
           <span>{state.error}</span>
         </div>
       )}
       {state?.ok && (
         <div className="callout callout-info mb-4">
-          <span aria-hidden="true">✓</span>
+          <IconCheck />
           <span>บันทึกแล้ว</span>
         </div>
       )}

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { revealAction, updateSensitiveAction } from "@/app/(app)/u/lifecycle-actions";
+import { IconAlert } from "@/components/icons";
 
 type Field = "rfid" | "tel";
 
@@ -32,7 +33,7 @@ export function SensitivePanel({
     <div className="glass">
       {error && (
         <div className="callout callout-bad m-4" role="alert">
-          <span aria-hidden="true">⚠</span>
+          <IconAlert />
           <span>{error}</span>
         </div>
       )}

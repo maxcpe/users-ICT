@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { checkIdcardAction, setIdcardAction } from "@/app/(app)/u/lifecycle-actions";
 import { HMAC_MODES, type HmacMode } from "@/lib/idcard-modes";
+import { IconAlert, IconCheck, IconInfo } from "@/components/icons";
 
 /**
  * เลขบัตรประชาชน (spec 6.1): ตรวจคีย์กับค่าที่มีอยู่ และตั้ง/ล้างค่า
@@ -41,19 +42,19 @@ export function IdcardPanel({
           <b>เลขบัตรประชาชน</b>
           <div className="small">เก็บเป็นรหัส HMAC ดูเลขเดิมไม่ได้</div>
         </div>
-        {hasIdcard ? <span className="chip chip-ok">✓ มีข้อมูลแล้ว</span> : <span className="chip chip-off">ยังไม่มี</span>}
+        {hasIdcard ? <span className="chip chip-ok"><IconCheck /> มีข้อมูลแล้ว</span> : <span className="chip chip-off">ยังไม่มี</span>}
       </div>
 
       <div aria-live="polite">
         {error && (
           <div className="callout callout-bad" role="alert">
-            <span aria-hidden="true">⚠</span>
+            <IconAlert />
             <span>{error}</span>
           </div>
         )}
         {result && (
           <div className="callout callout-info" role="status">
-            <span aria-hidden="true">ℹ️</span>
+            <IconInfo />
             <span>{result}</span>
           </div>
         )}

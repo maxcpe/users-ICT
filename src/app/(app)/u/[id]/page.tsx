@@ -6,6 +6,7 @@ import { getRolesOf } from "@/lib/registry";
 import { canSetRole, canViewSystem } from "@/lib/roles";
 import { listSystems } from "@/lib/system-repo";
 import { USERS_SYSTEM_KEY } from "@/lib/systems";
+import { IconAlert, IconCheck } from "@/components/icons";
 
 export const metadata: Metadata = { title: "สิทธิ์รายคน" };
 
@@ -46,13 +47,13 @@ export default async function PersonRoles({
     <>
       {created && (
         <div className="callout callout-info mb-3.5" role="status">
-          <span aria-hidden="true">✓</span>
+          <IconCheck />
           <span>เพิ่มบุคลากรแล้ว ตั้งสิทธิ์ของแต่ละระบบต่อได้เลยด้านล่าง</span>
         </div>
       )}
       {inactive && (
         <div className="callout callout-warn mb-3.5">
-          <span aria-hidden="true">⚠</span>
+          <IconAlert />
           <span>คนที่ปิดใช้งานตั้งสิทธิ์ไม่ได้ ต้องเปิดใช้งานอีกครั้งก่อน</span>
         </div>
       )}

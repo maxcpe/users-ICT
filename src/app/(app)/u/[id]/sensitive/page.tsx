@@ -8,6 +8,7 @@ import { maskPhone, maskRfid } from "@/lib/lifecycle-rules";
 import { loadPerson } from "@/lib/person";
 import { readSensitive } from "@/lib/registry";
 import { canSeeSensitive } from "@/lib/roles";
+import { IconLock } from "@/components/icons";
 
 export const metadata: Metadata = { title: "ข้อมูลอ่อนไหว" };
 
@@ -22,7 +23,7 @@ export default async function PersonSensitive({ params }: { params: Promise<{ id
   return (
     <div className="grid max-w-[760px] gap-3.5">
       <div className="callout callout-warn">
-        <span aria-hidden="true">🔒</span>
+        <IconLock />
         <span>เฉพาะผู้ดูแลกลาง · การกด &quot;แสดง&quot; ทุกครั้งถูกบันทึก · ไม่มีการเก็บเลขบัตรประชาชนตัวจริง</span>
       </div>
 

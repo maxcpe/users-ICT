@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="th" className={`${prompt.variable} ${kanit.variable}`}>
       <body>
-        <div className="glow-bg" aria-hidden="true" />
+        
         {children}
       </body>
     </html>

@@ -6,6 +6,7 @@ import { FieldError, FormMessage, SubmitButton } from "@/components/form-bits";
 import { LevelEditor } from "@/components/level-editor";
 import { SystemInfoFields } from "@/components/system-info-fields";
 import { createSystem, type FormState } from "../actions";
+import { IconInfo } from "@/components/icons";
 
 export function NewSystemForm() {
   const [state, action] = useActionState<FormState, FormData>(createSystem, undefined);
@@ -39,7 +40,7 @@ export function NewSystemForm() {
       <FieldError id="levels-err" message={f?.levels} />
 
       <div className="callout callout-info my-4">
-        <span aria-hidden="true">ℹ️</span>
+        <IconInfo />
         <span>
           ระบบใหม่เก็บสิทธิ์ในตารางกลาง ใช้ได้ทันทีโดยไม่ต้องแก้ตาราง หลังบันทึกจะไปที่หน้า <b>วิธีเชื่อมต่อ</b> เพื่อดู SQL ให้นักพัฒนาของเว็บนี้
         </span>

@@ -3,6 +3,7 @@ import { CopyButton } from "@/components/copy-button";
 import { requireActor } from "@/lib/access";
 import { canViewSystem } from "@/lib/roles";
 import { getSystem } from "@/lib/system-repo";
+import { IconCheck, IconGlobe, IconInfo } from "@/components/icons";
 
 export default async function SystemConnect({
   params,
@@ -30,12 +31,12 @@ GRANT SELECT ON \`user\`.\`v_staff\` TO 'ro_${key}'@'localhost';`;
     <div className="grid gap-3.5">
       {created && (
         <div className="callout callout-info" role="status">
-          <span aria-hidden="true">✓</span>
+          <IconCheck />
           <span>ลงทะเบียน{system.name}แล้ว ส่ง SQL ด้านล่างให้นักพัฒนาของเว็บนี้ และขอบัญชีฐานข้อมูลจากผู้พัฒนา</span>
         </div>
       )}
       <div className="callout callout-info">
-        <span aria-hidden="true">ℹ️</span>
+        <IconInfo />
         <span>
           {system.storage === "column"
             ? `${system.name}อ่านสิทธิ์จากที่เดิมได้ตามปกติ ไม่ต้องแก้ ถ้าต้องการเปลี่ยนมาอ่าน view ด้านล่างก็ทำได้โดยไม่ต้องย้ายข้อมูล`
@@ -77,7 +78,7 @@ GRANT SELECT ON \`user\`.\`v_staff\` TO 'ro_${key}'@'localhost';`;
       </section>
 
       <div className="callout callout-info">
-        <span aria-hidden="true">🌐</span>
+        <IconGlobe />
         <span>เว็บที่อยู่นอกเซิร์ฟเวอร์นี้ใช้ API อ่านอย่างเดียวแทน ยังไม่เปิด จะทำเมื่อมีเว็บแบบนี้ (spec 8.2)</span>
       </div>
     </div>

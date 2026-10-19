@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { Level } from "@/lib/systems";
+import { IconAlert, IconDown, IconUp } from "@/components/icons";
 
 export type FilterSystem = { key: string; name: string; levels: Level[] };
 
@@ -67,7 +68,7 @@ export function PeopleFilters({ branches, jobs, systems }: { branches: string[];
         <input id="q" value={q} onChange={(e) => setQ(e.target.value)} className="input flex-[1_1_240px] max-[820px]:basis-full" placeholder="ค้นหาชื่อหรืออีเมล…" />
         <button type="submit" className="btn max-[820px]:flex-1">ค้นหา</button>
         <button type="button" className="btn only-sm max-[820px]:flex-1" aria-expanded={open} aria-controls="people-more-filters" onClick={() => setOpen((v) => !v)}>
-          ตัวกรอง{secondary ? ` (${secondary})` : ""} {open ? "▴" : "▾"}
+          ตัวกรอง{secondary ? ` (${secondary})` : ""} {open ? <IconUp /> : <IconDown />}
         </button>
       </form>
 
@@ -95,7 +96,7 @@ export function PeopleFilters({ branches, jobs, systems }: { branches: string[];
         )}
         <label className="flex min-h-12 items-center gap-2.5 px-1">
           <input type="checkbox" className="check" checked={get("incomplete") === "1"} onChange={(e) => apply({ incomplete: e.target.checked ? "1" : "" })} />
-          <span>⚠ ข้อมูลไม่ครบหรืออีเมลซ้ำ</span>
+          <span><IconAlert /> ข้อมูลไม่ครบหรืออีเมลซ้ำ</span>
         </label>
         {active > 0 && (
           <button

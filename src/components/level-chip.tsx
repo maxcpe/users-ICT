@@ -1,4 +1,5 @@
 import { describeLevel, type Level } from "@/lib/systems";
+import { IconAlert } from "@/components/icons";
 
 const ROTATE = ["chip-pink", "chip-cyan", "chip-violet"] as const;
 
@@ -25,7 +26,7 @@ export function LevelChip({
   if (d.kind === "other")
     return (
       <span className="chip chip-warn" title="ค่าไม่อยู่ในระดับที่ลงทะเบียน อาจมีคนแก้ในฐานข้อมูลตรง">
-        ⚠ {prefix}ค่าอื่น ({d.value})
+        <IconAlert /> {prefix}ค่าอื่น ({d.value})
       </span>
     );
   return (

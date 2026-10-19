@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { IconAlert } from "@/components/icons";
 
 // โหลดหน้าไม่สำเร็จ (เช่น ต่อฐานข้อมูลไม่ได้) — ไม่แสดงข้อความ error ดิบ (อาจมีรายละเอียดฐานข้อมูล)
 // แสดงรหัสอ้างอิง (digest) ไว้แจ้งผู้ดูแลกลาง ซึ่งเทียบกับ log ของ server ได้
@@ -8,7 +9,7 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
   return (
     <div className="grid max-w-[640px] gap-3.5">
       <div className="callout callout-bad" role="alert">
-        <span aria-hidden="true">⚠</span>
+        <IconAlert />
         <span>
           <b>โหลดหน้านี้ไม่สำเร็จ</b>
           <br />

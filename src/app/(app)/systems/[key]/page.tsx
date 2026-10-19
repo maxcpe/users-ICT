@@ -48,9 +48,9 @@ export default async function SystemOverview({ params }: { params: Promise<{ key
   return (
     <>
       <div className="mb-3.5 grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3.5">
-        <div className="glass stat"><b className="glow-p">{holderCount.toLocaleString("th-TH")}</b>คนมีสิทธิ์</div>
+        <div className="glass stat"><b>{holderCount.toLocaleString("th-TH")}</b>คนมีสิทธิ์</div>
         <div className="glass stat"><b>{top !== undefined ? (counts.get(top) ?? 0) : 0}</b>ระดับสูงสุด ({top ?? "—"})</div>
-        <div className="glass stat"><b className="glow-c">{admins.length}</b>ผู้ดูแลที่ตั้งสิทธิ์ได้</div>
+        <div className="glass stat"><b>{admins.length}</b>ผู้ดูแลที่ตั้งสิทธิ์ได้</div>
         <Link href={`/systems/${key}/people?level=other`} className="glass stat">
           <b className="!text-warn-ink">{otherCount}</b>ค่าไม่อยู่ในรายการ
         </Link>

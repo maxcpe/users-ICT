@@ -6,6 +6,7 @@ import { countHolders } from "@/lib/registry";
 import { getSystem, listSystemAdmins } from "@/lib/system-repo";
 import { USERS_SYSTEM_KEY } from "@/lib/systems";
 import { SettingsForm } from "./settings-form";
+import { IconCheck } from "@/components/icons";
 
 export default async function SystemSettings({
   params,
@@ -27,7 +28,7 @@ export default async function SystemSettings({
     <>
     {renamed && (
       <div className="callout callout-info mb-3.5" role="status">
-        <span aria-hidden="true">✓</span>
+        <IconCheck />
         <span>เปลี่ยน key เป็น <b className="mono">{key}</b> แล้ว อย่าลืมแจ้งนักพัฒนาของเว็บนี้ให้แก้ key ในโค้ด</span>
       </div>
     )}

@@ -158,8 +158,8 @@ export function PersonActions({
         }
         impacts={
           deleteBlockers.length
-            ? deleteBlockers.map((b) => ({ label: b, value: "✕", tone: "now" as const }))
-            : [{ label: "ผ่านเงื่อนไขการลบทุกข้อ (spec 4.5.1)", value: "✓", tone: "count" as const }]
+            ? deleteBlockers.map((b) => ({ label: b, value: "ติดเงื่อนไข", tone: "now" as const }))
+            : [{ label: "ผ่านเงื่อนไขการลบทุกข้อ (spec 4.5.1)", value: "ผ่าน", tone: "count" as const }]
         }
         confirmLabel="ลบถาวร"
         busy={busy}

@@ -11,6 +11,7 @@ import { canSetRole, canViewSystem } from "@/lib/roles";
 import { getSystem } from "@/lib/system-repo";
 import { USERS_SYSTEM_KEY } from "@/lib/systems";
 import { blankToNull } from "@/lib/text";
+import { IconAlert, IconPlus } from "@/components/icons";
 
 const PAGE_SIZE = 50;
 
@@ -98,7 +99,7 @@ export default async function SystemPeople({ params, searchParams }: { params: P
           : undefined,
   }));
 
-  const pill = (view: string, text: string, current: boolean) => (
+  const pill = (view: string, text: React.ReactNode, current: boolean) => (
     <Link href={href({ level: view, page: "1" })} className="pill" aria-current={current ? "page" : undefined}>{text}</Link>
   );
 
@@ -110,11 +111,11 @@ export default async function SystemPeople({ params, searchParams }: { params: P
           {system.levels.map((l) => (
             <span key={l.value} className="contents">{pill(String(l.value), `${l.label} ${countOf(l.value).toLocaleString("th-TH")}`, level === l.value)}</span>
           ))}
-          {otherCount > 0 && pill("other", `⚠ ค่าอื่น ${otherCount.toLocaleString("th-TH")}`, level === "other")}
+          {otherCount > 0 && pill("other", <><IconAlert /> ค่าอื่น {otherCount.toLocaleString("th-TH")}</>, level === "other")}
           {canGrant && pill("none", `ไม่มีสิทธิ์ ${noneCount.toLocaleString("th-TH")}`, level === "none")}
         </nav>
         {canEdit && level !== "none" && (
-          <Link href={href({ level: "none", page: "1" })} className="btn btn-primary ml-auto max-[820px]:w-full">＋ เพิ่มคน</Link>
+          <Link href={href({ level: "none", page: "1" })} className="btn btn-primary ml-auto max-[820px]:w-full"><IconPlus />เพิ่มคน</Link>
         )}
       </div>
 

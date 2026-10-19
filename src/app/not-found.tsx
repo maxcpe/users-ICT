@@ -4,8 +4,7 @@ import Link from "next/link";
 export default function NotFound() {
   return (
     <div className="relative grid min-h-screen place-items-center px-4 py-6">
-      <div className="grid-bg" aria-hidden="true" />
-      <main id="main" className="above text-center">
+            <main id="main" className="above text-center">
         <div className="big404" aria-hidden="true">404</div>
         <h1 className="h1 !text-[28px]">ไม่พบหน้านี้</h1>
         <p className="lead">หน้าอาจถูกย้าย หรือท่านไม่มีสิทธิ์เปิด</p>

@@ -7,6 +7,7 @@ import { describeLevel, type Level } from "@/lib/systems";
 import { ConfirmDialog, type Impact } from "./confirm-dialog";
 import { LevelChip } from "./level-chip";
 import { LevelSelect } from "./level-select";
+import { IconAlert } from "@/components/icons";
 
 export type PersonSystemRow = {
   key: string;
@@ -85,7 +86,7 @@ export function PersonRoleEditor({ userId, personName, systems }: { userId: numb
                 <b>{s.name}</b>
                 <div className="small">
                   {s.note}
-                  {s.unconfirmed && <span className="chip chip-warn ml-1.5">⚠ ชื่อระดับยังไม่ยืนยัน</span>}
+                  {s.unconfirmed && <span className="chip chip-warn ml-1.5"><IconAlert /> ชื่อระดับยังไม่ยืนยัน</span>}
                 </div>
               </div>
               {s.locked ? (
