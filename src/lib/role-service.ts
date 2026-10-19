@@ -3,8 +3,8 @@ import "server-only";
 
 import { writeAudit } from "./audit";
 import { prisma, type Tx } from "./db";
-import { getStaffByIds, readRoleForUpdate, ReadOnlyUserDbError, writeRole, type SystemDef } from "./registry";
-import { checkRoleChange, ROLE_REASON_TEXT, type RoleChange } from "./role-rules";
+import { getStaffByIds, listHolders, readRoleForUpdate, ReadOnlyUserDbError, writeRole, type SystemDef } from "./registry";
+import { checkCentralRevoke, checkRoleChange, ROLE_REASON_TEXT, type RoleChange } from "./role-rules";
 import { CENTRAL_LEVEL, isCentral, SYSTEM_ADMIN_LEVEL, type Actor } from "./roles";
 import { listSystems } from "./system-repo";
 import { USERS_SYSTEM_KEY } from "./systems";
@@ -125,6 +125,53 @@ export async function revokeAdmin(actor: Actor, systemKey: string, userId: numbe
     if (removed.count === 0) return { ok: true as const, changed: 0, unchanged: 1 };
     await writeAudit(tx, { actorId: actor.userId, action: "admin.revoke", targetId: userId, systemKey, changes: { admin: [true, false] } });
     await syncUsersLevel(tx, actor, userId);
+    return { ok: true as const, changed: 1, unchanged: 0 };
+  });
+}
+
+// ---------- ผู้ดูแลกลาง (spec 3.2) ----------
+
+/** ผู้ดูแลกลางที่ยังใช้งานอยู่ ไม่นับ excludeId — ต้องเหลืออย่างน้อย 1 คนเสมอ */
+async function activeCentralsExcept(tx: Tx, excludeId: number): Promise<number> {
+  const users = await usersSystem();
+  const ids = (await listHolders(users, tx)).filter((h) => h.level === CENTRAL_LEVEL && h.id !== excludeId).map((h) => h.id);
+  if (!ids.length) return 0;
+  const inactive = await tx.userStatus.count({ where: { userId: { in: ids }, status: "inactive" } });
+  return ids.length - inactive;
+}
+
+/** แต่งตั้งผู้ดูแลกลาง (ระดับ 99 ของ users) — ผู้ดูแลกลางเท่านั้น */
+export async function assignCentral(actor: Actor, userId: number): Promise<ApplyResult> {
+  if (!isCentral(actor)) return { ok: false, error: "เฉพาะผู้ดูแลกลาง" };
+  const [staff] = await getStaffByIds([userId]);
+  if (!staff) return { ok: false, error: "ไม่พบบุคลากรคนนี้" };
+  const status = await prisma.userStatus.findUnique({ where: { userId } });
+  if (status?.status === "inactive") return { ok: false, error: "คนนี้ถูกปิดใช้งาน แต่งตั้งไม่ได้" };
+  const users = await usersSystem();
+  return prisma.$transaction(async (tx) => {
+    const current = await readRoleForUpdate(tx, users, userId);
+    if (current === CENTRAL_LEVEL) return { ok: true as const, changed: 0, unchanged: 1 };
+    await writeRole(tx, users, userId, CENTRAL_LEVEL);
+    await writeAudit(tx, { actorId: actor.userId, action: "role.set", targetId: userId, systemKey: USERS_SYSTEM_KEY, changes: { level: [current, CENTRAL_LEVEL], central: [false, true] } });
+    return { ok: true as const, changed: 1, unchanged: 0 };
+  });
+}
+
+/** ถอนผู้ดูแลกลาง — ถอนตัวเองไม่ได้ และต้องเหลืออย่างน้อย 1 คน; ยังดูแลระบบอื่นอยู่ = กลับเป็น 50 */
+export async function revokeCentral(actor: Actor, userId: number): Promise<ApplyResult> {
+  if (!isCentral(actor)) return { ok: false, error: "เฉพาะผู้ดูแลกลาง" };
+  const self = checkCentralRevoke({ actorId: actor.userId, targetId: userId, activeOthers: 1 });
+  if (!self.ok) return self;
+  const users = await usersSystem();
+  return prisma.$transaction(async (tx) => {
+    const current = await readRoleForUpdate(tx, users, userId);
+    if (current !== CENTRAL_LEVEL) return { ok: true as const, changed: 0, unchanged: 1 };
+    const check = checkCentralRevoke({ actorId: actor.userId, targetId: userId, activeOthers: await activeCentralsExcept(tx, userId) });
+    if (!check.ok) return check;
+    const stillAdmin = (await tx.systemAdmin.count({ where: { userId } })) > 0;
+    const next = stillAdmin ? SYSTEM_ADMIN_LEVEL : null;
+    await writeRole(tx, users, userId, next);
+    await writeAudit(tx, { actorId: actor.userId, action: "role.set", targetId: userId, systemKey: USERS_SYSTEM_KEY, changes: { level: [current, next], central: [true, false] } });
     return { ok: true as const, changed: 1, unchanged: 0 };
   });
 }

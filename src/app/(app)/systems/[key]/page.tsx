@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { requireActor } from "@/lib/access";
 import { prisma } from "@/lib/db";
 import { AdminManager } from "@/components/admin-manager";
-import { getStaffByIds, levelCounts } from "@/lib/registry";
-import { canViewSystem, isCentral } from "@/lib/roles";
+import { CentralAdminManager } from "@/components/central-admin-manager";
+import { getStaffByIds, levelCounts, listHolders } from "@/lib/registry";
+import { canViewSystem, CENTRAL_LEVEL, isCentral } from "@/lib/roles";
 import { getSystem, listSystemAdmins } from "@/lib/system-repo";
 import { USERS_SYSTEM_KEY } from "@/lib/systems";
 import { initials } from "@/lib/text";
@@ -26,6 +27,15 @@ export default async function SystemOverview({ params }: { params: Promise<{ key
     (await getStaffByIds([...new Set([...admins.map((a) => a.userId), ...recent.map((r) => r.actorId), ...recent.flatMap((r) => (r.targetId ? [r.targetId] : []))])])).map(
       (p) => [p.id, p.name ?? ""],
     ),
+  );
+
+  // ระบบ users: ผู้ดูแลกลางจัดการผู้ดูแลกลางคนอื่นได้ที่นี่ (spec 3.2)
+  const showCentrals = key === USERS_SYSTEM_KEY && isCentral(actor);
+  const centrals = showCentrals ? (await listHolders(system)).filter((h) => h.level === CENTRAL_LEVEL) : [];
+  const centralInactive = new Set(
+    centrals.length
+      ? (await prisma.userStatus.findMany({ where: { status: "inactive", userId: { in: centrals.map((c) => c.id) } }, select: { userId: true } })).map((r) => r.userId)
+      : [],
   );
 
   // นับในฐาน (GROUP BY) รองรับคนจำนวนมาก
@@ -72,7 +82,12 @@ export default async function SystemOverview({ params }: { params: Promise<{ key
 
         <div className="grid content-start gap-3.5">
           <section className="glass pad" aria-labelledby="admins">
-            {isCentral(actor) && key !== USERS_SYSTEM_KEY ? (
+            {showCentrals ? (
+              <CentralAdminManager
+                selfId={actor.userId}
+                centrals={centrals.map((c) => ({ id: c.id, name: c.name ?? "—", email: c.email?.trim() || null, inactive: centralInactive.has(c.id) }))}
+              />
+            ) : isCentral(actor) && key !== USERS_SYSTEM_KEY ? (
               <AdminManager
                 systemKey={key}
                 systemName={system.name}

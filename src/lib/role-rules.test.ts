@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkRoleChange } from "./role-rules";
+import { checkCentralRevoke, checkRoleChange } from "./role-rules";
 import type { Actor } from "./roles";
 
 const central: Actor = { userId: 1, name: "ก", email: "a@up.ac.th", role: "central", systems: [] };
@@ -39,5 +39,17 @@ describe("checkRoleChange", () => {
 
   it("ระบบ users ตั้งผ่านหน้านี้ไม่ได้ แม้เป็นผู้ดูแลกลาง", () => {
     expect(checkRoleChange({ ...base, system: { ...checkin, key: "users" }, actor: central, change: { userId: 10, systemKey: "users", value: 99 } })).toMatchObject({ ok: false, reason: "forbidden" });
+  });
+});
+
+describe("checkCentralRevoke (spec 3.2)", () => {
+  it("ถอนผู้ดูแลกลางคนอื่นได้ เมื่อยังเหลือคนที่ใช้งานอยู่", () => {
+    expect(checkCentralRevoke({ actorId: 1, targetId: 2, activeOthers: 1 })).toEqual({ ok: true });
+  });
+  it("ถอนตัวเองไม่ได้", () => {
+    expect(checkCentralRevoke({ actorId: 1, targetId: 1, activeOthers: 3 })).toMatchObject({ ok: false });
+  });
+  it("ถอนคนสุดท้ายที่ใช้งานอยู่ไม่ได้", () => {
+    expect(checkCentralRevoke({ actorId: 1, targetId: 2, activeOthers: 0 })).toMatchObject({ ok: false });
   });
 });

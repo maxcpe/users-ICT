@@ -39,3 +39,13 @@ export const ROLE_REASON_TEXT: Record<Exclude<RoleCheck, { ok: true }>["reason"]
   deactivated: "คนนี้ถูกปิดใช้งาน ต้องเปิดใช้งานอีกครั้งก่อน",
   bad_level: "ระดับนี้ไม่ได้ลงทะเบียนไว้",
 };
+
+/**
+ * ถอนผู้ดูแลกลางได้ไหม (spec 3.2): ถอนตัวเองไม่ได้ และต้องเหลือผู้ดูแลกลางที่ใช้งานอยู่อย่างน้อย 1 คน
+ * activeOthers = ผู้ดูแลกลางที่ใช้งานอยู่ ไม่นับคนที่จะถอน
+ */
+export function checkCentralRevoke(input: { actorId: number; targetId: number; activeOthers: number }): { ok: true } | { ok: false; error: string } {
+  if (input.targetId === input.actorId) return { ok: false, error: "ถอนตัวเองไม่ได้ ให้ผู้ดูแลกลางคนอื่นถอนให้" };
+  if (input.activeOthers < 1) return { ok: false, error: "ต้องมีผู้ดูแลกลางที่ใช้งานอยู่อย่างน้อย 1 คน" };
+  return { ok: true };
+}

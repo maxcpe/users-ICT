@@ -8,7 +8,7 @@ import { searchStaff, searchStaffIds, type StaffFilter, type StaffSearch, type S
 import { canViewSystem, isCentral, type Actor } from "@/lib/roles";
 import { getSystem } from "@/lib/system-repo";
 import { blankToNull } from "@/lib/text";
-import { applyRoleChanges, assignAdmin, revokeAdmin } from "@/lib/role-service";
+import { applyRoleChanges, assignAdmin, assignCentral, revokeAdmin, revokeCentral } from "@/lib/role-service";
 
 export type ActionResult = { ok: true; message: string } | { ok: false; error: string };
 
@@ -134,4 +134,23 @@ export async function addAllMatching(input: unknown): Promise<ActionResult> {
   if (!r.ok) return r;
   refresh();
   return { ok: true, message: `เพิ่มแล้ว ${r.changed} คน${r.skipped ? ` · ข้าม ${r.skipped} คน (ปิดใช้งาน)` : ""}` };
+}
+
+/** แต่งตั้ง/ถอนผู้ดูแลกลาง (spec 3.2) — ตรวจซ้ำทั้งหมดใน role-service */
+export async function addCentralAdmin(userId: number): Promise<ActionResult> {
+  const actor = await requireActor();
+  if (!id.safeParse(userId).success) return { ok: false, error: "เลือกบุคลากรก่อน" };
+  const r = await assignCentral(actor, userId);
+  if (!r.ok) return r;
+  refresh();
+  return { ok: true, message: r.changed ? "แต่งตั้งเป็นผู้ดูแลกลางแล้ว มีผลทันที" : "เป็นผู้ดูแลกลางอยู่แล้ว" };
+}
+
+export async function removeCentralAdmin(userId: number): Promise<ActionResult> {
+  const actor = await requireActor();
+  if (!id.safeParse(userId).success) return { ok: false, error: "ข้อมูลไม่ถูกต้อง" };
+  const r = await revokeCentral(actor, userId);
+  if (!r.ok) return r;
+  refresh();
+  return { ok: true, message: r.changed ? "ถอนผู้ดูแลกลางแล้ว" : "ไม่ได้เป็นผู้ดูแลกลางอยู่แล้ว" };
 }
