@@ -42,10 +42,12 @@ jobs:
 
       # ลบเฉพาะไฟล์ที่ไม่อยู่ใน git และไม่ได้ ignore (กันไฟล์ค้างจากรอบก่อน) แล้วคืนไฟล์ใน git ให้ตรง commit
       - name: Clean workspace
+        env:
+          CLEAN_INSTALL: ${{ inputs.clean_install }}
         run: |
           git reset --hard HEAD
           git clean -ffd
-          if ("${{ inputs.clean_install }}" -eq "true" -and (Test-Path node_modules)) { cmd /c rmdir /s /q node_modules }
+          if ($env:CLEAN_INSTALL -eq "true" -and (Test-Path node_modules)) { cmd /c rmdir /s /q node_modules }
 
       - name: Install
         run: |

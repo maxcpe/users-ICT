@@ -114,6 +114,8 @@ Copy-Item -LiteralPath $envFile -Destination $releaseEnv -Force
 & icacls $releaseEnv /inheritance:r /grant:r 'Administrators:F' 'SYSTEM:F' | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "ตั้งสิทธิ์ $releaseEnv ไม่สำเร็จ" }
 Set-Content -Path (Join-Path $release 'REVISION') -Value $Sha -Encoding ascii
+# เก็บ package-lock.json ไว้กับ release เพื่อตรวจเวอร์ชันและ npm audit ย้อนหลังได้ (standalone ไม่มีไฟล์นี้)
+Copy-Item -LiteralPath (Join-Path $Source 'package-lock.json') -Destination (Join-Path $release 'package-lock.json') -Force
 
 # ---------- สลับเวอร์ชัน ----------
 $current = Join-Path $AppDir 'current'

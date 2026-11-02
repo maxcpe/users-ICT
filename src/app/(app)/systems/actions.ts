@@ -31,7 +31,7 @@ const infoSchema = z.object({
 
 function parseLevelsField(raw: FormDataEntryValue | null): Level[] | string {
   try {
-    const parsed = z.array(levelSchema).safeParse(JSON.parse(String(raw ?? "[]")));
+    const parsed = z.array(levelSchema).max(100).safeParse(JSON.parse(String(raw ?? "[]")));
     if (!parsed.success) return "ระดับไม่ถูกต้อง: ค่าต้องเป็นเลข 1–999 และต้องมีชื่อที่แสดง";
     return parsed.data
       .map((l) => ({ ...l, description: l.description || undefined }))
@@ -117,6 +117,7 @@ export async function saveLevels(key: string, _prev: FormState, form: FormData):
 /** ยืนยันความหมายของระดับกับเจ้าของระบบแล้ว */
 export async function confirmLevels(key: string): Promise<void> {
   const actor = await requireCentral();
+  if (!(await getSystem(String(key)))) return;
   await prisma.$transaction(async (tx) => {
     await tx.system.update({ where: { key }, data: { unconfirmed: false } });
     await writeAudit(tx, { actorId: actor.userId, action: "system.confirm", systemKey: key, changes: { unconfirmed: [true, false] } });

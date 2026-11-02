@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { requireCentral } from "@/lib/access";
 import { createStaff, editStaff } from "@/lib/staff-service";
 import { staffSchema } from "@/lib/staff-rules";
@@ -45,6 +46,7 @@ export async function createStaffAction(_prev: StaffFormState, form: FormData): 
 
 export async function editStaffAction(userId: number, _prev: StaffFormState, form: FormData): Promise<StaffFormState> {
   const actor = await requireCentral();
+  if (!z.number().int().positive().safeParse(userId).success) return { error: "ข้อมูลไม่ถูกต้อง" };
   const parsed = parse(form);
   if (!parsed.success) return { fields: fieldErrors(parsed.error.issues) };
   const r = await editStaff(actor, userId, parsed.data, form.get("confirmEmail") === "yes");
