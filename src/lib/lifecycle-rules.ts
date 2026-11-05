@@ -75,3 +75,10 @@ export function maskPhone(v: string | null): string | null {
     })
     .join("");
 }
+
+/** ลบระบบออกจากทะเบียน (spec 4.6.3) — ห้ามระบบ users และต้องพิมพ์ key ให้ตรง */
+export function checkSystemDelete(key: string, confirmation: string): string | null {
+  if (key === "users") return "ลบระบบนี้ไม่ได้";
+  if (confirmation.trim() !== key) return "key ที่พิมพ์ไม่ตรง";
+  return null;
+}

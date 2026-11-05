@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bangkokToday, checkDeactivate, deleteBlockers, isScheduled, maskPhone, maskRfid } from "./lifecycle-rules";
+import { bangkokToday, checkDeactivate, checkSystemDelete, deleteBlockers, isScheduled, maskPhone, maskRfid } from "./lifecycle-rules";
 
 const base = { actorId: 1, targetId: 3, alreadyInactive: false, targetIsCentral: false, otherActiveCentrals: 0, effectiveDate: "2026-10-09", today: "2026-10-09" };
 
@@ -48,5 +48,16 @@ describe("ปิดบังข้อมูลอ่อนไหว (spec 6.2)",
     expect(maskPhone("081-234-5567")).toBe("0••-•••-•567");
     expect(maskPhone("2326")).toBe("••••");
     expect(maskPhone(null)).toBeNull();
+  });
+});
+
+describe("ลบระบบ (spec 4.6.3)", () => {
+  it("ลบระบบ users ไม่ได้ แม้พิมพ์ key ถูก", () => {
+    expect(checkSystemDelete("users", "users")).toBe("ลบระบบนี้ไม่ได้");
+  });
+  it("ต้องพิมพ์ key ให้ตรง (ตัดช่องว่างหัวท้าย)", () => {
+    expect(checkSystemDelete("van", "")).toBe("key ที่พิมพ์ไม่ตรง");
+    expect(checkSystemDelete("van", "Van")).toBe("key ที่พิมพ์ไม่ตรง");
+    expect(checkSystemDelete("van", " van ")).toBeNull();
   });
 });

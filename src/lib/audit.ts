@@ -14,6 +14,7 @@ export type AuditAction =
   | "sensitive.check"
   | "system.clear"
   | "system.rename"
+  | "system.delete"
   | "system.create"
   | "system.update"
   | "system.levels"

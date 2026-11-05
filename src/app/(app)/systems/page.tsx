@@ -6,12 +6,12 @@ import { canViewSystem, isCentral } from "@/lib/roles";
 import { listSystemAdmins, listSystems } from "@/lib/system-repo";
 import { USERS_SYSTEM_KEY } from "@/lib/systems";
 import { initials } from "@/lib/text";
-import { IconAlert, IconGrid, IconList, IconMoon, IconPlus } from "@/components/icons";
+import { IconAlert, IconCheck, IconGrid, IconList, IconMoon, IconPlus } from "@/components/icons";
 import { SystemIcon } from "@/components/system-icon";
 
 export const metadata: Metadata = { title: "ระบบและผู้ดูแล" };
 
-type Search = { q?: string; show?: string; view?: string };
+type Search = { q?: string; show?: string; view?: string; deleted?: string };
 type Show = "all" | "warn" | "hidden";
 
 // แบบ A (เลือก 9 ต.ค. 2569): การ์ดละระบบ ไม่แสดงชื่อคอลัมน์ U_…
@@ -23,6 +23,8 @@ export default async function SystemsPage({ searchParams }: { searchParams: Prom
   const q = (sp.q ?? "").trim().slice(0, 100);
   const show: Show = sp.show === "warn" || sp.show === "hidden" ? sp.show : "all";
   const view = sp.view === "list" ? "list" : "card";
+  // หลังลบระบบ (spec 4.6.3) แสดงเฉพาะ key ที่รูปแบบถูกต้อง
+  const deleted = central && sp.deleted && /^[a-z][a-z0-9_]{1,49}$/.test(sp.deleted) ? sp.deleted : null;
 
   const systems = (await listSystems({ includeInactive: central })).filter((s) => s.key !== USERS_SYSTEM_KEY && canViewSystem(actor, s.key));
   const [admins, counts] = await Promise.all([listSystemAdmins(), levelCountsAll(systems)]);
@@ -77,6 +79,12 @@ export default async function SystemsPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
+      {deleted && (
+        <div className="callout callout-info mb-3.5" role="status">
+          <IconCheck />
+          <span>ลบระบบ <b className="mono">{deleted}</b> แล้ว ข้อมูลระบบและสิทธิ์เดิมของทุกคนอยู่ในบันทึกการใช้งาน</span>
+        </div>
+      )}
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2.5">
         <h1 className="h1">
           {central ? <>ระบบและผู้ดูแล</> : <>ระบบที่ดูแล</>}

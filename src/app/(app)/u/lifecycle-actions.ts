@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireCentral } from "@/lib/access";
 import { DEACTIVATE_REASONS } from "@/lib/lifecycle-rules";
-import { clearSystem, deactivate, deleteStaff, reactivate, renameSystemKey, type Result } from "@/lib/lifecycle-service";
+import { clearSystem, deactivate, deleteStaff, deleteSystem, reactivate, renameSystemKey, type Result } from "@/lib/lifecycle-service";
 import { checkIdcard, revealSensitive, setIdcard, updateSensitiveField } from "@/lib/sensitive-service";
 
 const id = z.number().int().positive();
@@ -46,6 +46,14 @@ export async function clearSystemAction(key: string, confirmation: string): Prom
   const r = await clearSystem(actor, String(key), String(confirmation ?? ""));
   if (r.ok) refresh();
   return r;
+}
+
+export async function deleteSystemAction(key: string, confirmation: string): Promise<Result> {
+  const actor = await requireCentral();
+  const r = await deleteSystem(actor, String(key), String(confirmation ?? ""));
+  if (!r.ok) return r;
+  refresh();
+  redirect(`/systems?deleted=${encodeURIComponent(String(key))}`);
 }
 
 const field = z.enum(["rfid", "tel"]);

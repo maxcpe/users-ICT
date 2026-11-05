@@ -21,6 +21,7 @@ const ACTION_TEXT: Record<string, { label: string; chip: string }> = {
   "system.confirm": { label: "ยืนยันระดับ", chip: "chip-ok" },
   "system.clear": { label: "ล้างสิทธิ์ทั้งระบบ", chip: "chip-pink" },
   "system.rename": { label: "เปลี่ยน key", chip: "chip-warn" },
+  "system.delete": { label: "ลบระบบ", chip: "chip-pink" },
 };
 
 const FIELD_TEXT: Record<string, string> = {
@@ -96,6 +97,11 @@ function Diff({ entry, system }: { entry: AuditLog; system?: SystemDef }) {
         <s className="text-bad-ink">{show(c.key[0])}</s> → <span className="text-ok-ink">{show(c.key[1])}</span>
       </div>
     );
+  }
+  if (entry.action === "system.delete") {
+    const n = c.before && typeof c.before === "object" ? Object.keys(c.before).length : 0;
+    const name = c.system && typeof c.system === "object" && "name" in c.system ? String(c.system.name) : null;
+    return <div className="small">{name ? `${name} · ` : ""}ล้างสิทธิ์ {n} คน (ข้อมูลระบบและค่าเดิมเก็บไว้ในบันทึกนี้)</div>;
   }
   if (entry.action === "system.clear") {
     const n = c.before && typeof c.before === "object" ? Object.keys(c.before).length : 0;

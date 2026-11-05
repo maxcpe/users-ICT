@@ -1,11 +1,11 @@
-// ปิด/เปิดใช้งาน ลบแถวที่เพิ่มผิด ล้างสิทธิ์ทั้งระบบ (spec 4.5, 4.5.1, 4.6.1)
+// ปิด/เปิดใช้งาน ลบแถวที่เพิ่มผิด ล้างสิทธิ์ทั้งระบบ ลบระบบ (spec 4.5, 4.5.1, 4.6.1, 4.6.3)
 // ผู้ดูแลกลางเท่านั้น ทุกอย่างบันทึก + audit ใน transaction เดียว
 
 import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import { writeAudit } from "./audit";
 import { prisma, type Tx } from "./db";
-import { bangkokToday, checkDeactivate, deleteBlockers, isScheduled } from "./lifecycle-rules";
+import { bangkokToday, checkDeactivate, checkSystemDelete, deleteBlockers, isScheduled } from "./lifecycle-rules";
 import {
   clearSystemRoles,
   countTableRoles,
@@ -267,4 +267,43 @@ export async function renameSystemKey(actor: Actor, oldKey: string, newKeyRaw: s
       return { ok: true as const, message: `เปลี่ยน key เป็น ${newKey} แล้ว`, key: newKey };
     }),
   ) as Promise<Result & { key?: string }>;
+}
+
+/**
+ * ลบระบบออกจากทะเบียน (spec 4.6.3): ล้างสิทธิ์ทุกคน ถอนผู้ดูแลทั้งหมด แล้วลบแถว systems ใน transaction เดียว
+ * แบบ column: คอลัมน์ U_… ยังอยู่ใน user.user (ห้าม ALTER) แต่ทุกแถวเป็น NULL
+ * audit log เก็บข้อมูลระบบและค่าเดิมของทุกคนไว้ ไม่มีปุ่มคืนอัตโนมัติ
+ */
+export async function deleteSystem(actor: Actor, key: string, confirmation: string): Promise<Result> {
+  if (!isCentral(actor)) return { ok: false, error: "เฉพาะผู้ดูแลกลาง" };
+  const err = checkSystemDelete(key, confirmation);
+  if (err) return { ok: false, error: err };
+  const system = (await listSystems({ includeInactive: true })).find((s) => s.key === key);
+  if (!system) return { ok: false, error: "ไม่พบระบบนี้" };
+  return guarded(() =>
+    prisma.$transaction(
+      async (tx) => {
+        const row = await tx.system.findUnique({ where: { key } });
+        if (!row) throw new StopError("ไม่พบระบบนี้");
+        const before = Object.fromEntries((await listHolders(system, tx)).map((h) => [h.id, h.level]));
+        const cleared = await clearSystemRoles(tx, system);
+        const admins = await tx.systemAdmin.findMany({ where: { systemKey: key }, select: { userId: true } });
+        await tx.systemAdmin.deleteMany({ where: { systemKey: key } });
+        for (const a of admins) await syncUsersLevel(tx, actor, a.userId);
+        await tx.system.delete({ where: { key } });
+        await writeAudit(tx, {
+          actorId: actor.userId,
+          action: "system.delete",
+          systemKey: key,
+          changes: {
+            system: { name: row.name, storage: row.storage, columnName: row.columnName, icon: row.icon, url: row.url, note: row.note, levels: row.levels },
+            before,
+            admins: admins.map((a) => a.userId),
+          } as Prisma.InputJsonValue,
+        });
+        return { ok: true as const, message: `ลบระบบ ${row.name} แล้ว (ล้างสิทธิ์ ${cleared} คน ถอนผู้ดูแล ${admins.length} คน)` };
+      },
+      { timeout: 30_000 },
+    ),
+  );
 }

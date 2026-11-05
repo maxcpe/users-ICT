@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { ClearSystemButton } from "@/components/clear-system-button";
+import { DeleteSystemButton } from "@/components/delete-system-button";
 import { requireCentral } from "@/lib/access";
 import { dbNames } from "@/lib/env";
 import { countHolders } from "@/lib/registry";
@@ -44,6 +45,16 @@ export default async function SystemSettings({
             holders={holderCount}
             admins={admins.length}
             disabledReason={readOnly ? "โหมดอ่านข้อมูลจริง ล้างสิทธิ์ระบบเดิมไม่ได้" : undefined}
+          />
+          <h2 id="danger-delete" className="h2 !text-bad-ink mt-6">ลบระบบ</h2>
+          <p className="small mb-3 mt-0">ล้างสิทธิ์ทุกคน ถอนผู้ดูแล แล้วเอาระบบออกจากทะเบียน ใช้เมื่อเลิกใช้เว็บนี้แล้ว ถ้าแค่ไม่อยากให้เห็นในหน้าจอ ให้ปิดสวิตช์ &quot;แสดงในหน้าจอ&quot; แทน</p>
+          <DeleteSystemButton
+            systemKey={key}
+            systemName={system.name}
+            storage={system.storage}
+            holders={holderCount}
+            admins={admins.length}
+            disabledReason={readOnly ? "โหมดอ่านข้อมูลจริง ลบระบบเดิมไม่ได้" : undefined}
           />
         </section>
       )}
